@@ -47,10 +47,10 @@ When the server is running, open a browser and go to:
 - **GET** `/health` - Check if the service is running
 
 #### Code Submission
-- **POST** `/submit` - Submit code for analysis
-- **GET** `/submission/{submission_id}` - Get submission details
-- **GET** `/submissions` - List all submissions
-- **DELETE** `/submission/{submission_id}` - Delete a submission
+- **POST** `/submit` - Submits code for analysis
+- **GET** `/submission/{submission_id}` - Gets submission details
+- **GET** `/submissions` - Lists all submissions
+- **DELETE** `/submission/{submission_id}` - Deletes a submission
 
 
 ### How to test the API Gateway
