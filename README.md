@@ -5,7 +5,7 @@ An extensible AI-powered code reviewer that combines static/dynamic analysis wit
 ## API Gateway - Task 1.2
 
 This is the API Gateway implementation for **Task 1.2** of the WBS: "Build interface to receive and route code subs".
-After downloading the files, the IDE of choice for this ti run on is VS Code
+After downloading the files, the IDE of choice for this to run on is VS Code
 
 ### Overview 
 The API Gateway is in charge of:
