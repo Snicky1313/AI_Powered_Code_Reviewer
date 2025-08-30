@@ -6,24 +6,24 @@ An extensible AI-powered code reviewer that combines static/dynamic analysis wit
 
 This is the API Gateway implementation for **Task 1.2** of the WBS: "Build interface to receive and route code subs".
 
-## Overview
-
+## Overview 
 The API Gateway is in charge of:
 - Receiving code submissions from users
 - Generating unique submission IDs
-- Storing submission data from the user
-- Routing to analysis services 
+- Stores the submission data 
+- Routes it to analysis services 
 
 ## Files included in Task 1.2 
 
-- `main.py` - Main FastAPI application
-- `requirements.txt` - Python dependencies
-- `testForAPI.py` - Test script to verify functionality
-- `README.md` - This file
+- {main.py} - Main FastAPI application
+- {requirements.txt} - is the list of Python requirements
+- {testForAPI.py} - script that tests the API's functionality
+- {README.md} - This file
 
 ## Setup Instructions
+## First open a terminal on your PC (command prompt, Powershell, or VS Code Terminal)
 
-### 1. Install requirments
+### 1. Install requirments (run this in the project folder)
 ```
 pip install -r requirements.txt
 ```
@@ -36,9 +36,9 @@ python api_gateway_main.py
 After doing this, the server will start on `http://localhost:8000`
 
 ### 3. View API docs
-Open your browser and go to:
+When the server is running, open a browser and go to:
 - **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+
 
 
 ## API Endpoints
@@ -55,7 +55,7 @@ Open your browser and go to:
 
 ## How to test the API Gateway
 
-### Method 1: Automatic Testing
+### Method 1: Run the test script (do this in your terminal)
 ```
 python test_api_gateway.py
 ```
