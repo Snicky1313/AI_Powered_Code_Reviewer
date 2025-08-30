@@ -36,7 +36,7 @@ python api_gateway_main.py
 
 After doing this, the server will start on `http://localhost:8000`
 
-### 3. View API docs
+#### 3. View API docs
 When the server is running, open a browser and go to:
 - **Swagger UI**: http://localhost:8000/docs
 
