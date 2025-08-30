@@ -89,3 +89,6 @@ python testForAPI.py
 ### How to stop the server
 - **PRESS** `Control+C` in the terminal
 
+
+## Syntax Analyzer - Task 1.3
+
