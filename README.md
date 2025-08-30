@@ -21,24 +21,42 @@ The API Gateway is in charge of:
 - {testForAPI.py} - script that tests the API's functionality
 - {README.md} - This file
 
-### Setup Instructions
-#### First open a terminal on your PC (command prompt, Powershell, or VS Code Terminal)
+## Setup Instructions
+
+### Click the green Code button ▸ Download ZIP
+### Unzip the folder, then right-click the folder ▸ Open in Terminal (you can also open the folder in the VS Code app and use the built-in terminal of VS CODE). The terminal can be found at the top of your screen, naviate to that button and click "New Terminal".
+
+### In your terminal, enter:
+``` FOR Windows
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+``` FOR Mac
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+
+## Continuing the Installation Instructions
 
 #### 1. Install requirments (run this in the project folder)
 ```
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 #### 2. To start the server
 ```
-python api_gateway_main.py
+python main.py
 ```
 
 After doing this, the server will start on `http://localhost:8000`
+(IF this doesnt work, run "uvicorn main:app --reload" in the terminal inside the folder of where main.py is located
 
 #### 3. View API docs
 When the server is running, open a browser and go to:
-- **Swagger UI**: http://localhost:8000/docs
+- `http://localhost:8000/docs`
 
 
 
@@ -58,7 +76,7 @@ When the server is running, open a browser and go to:
 
 #### Method 1: Run the test script (do this in your terminal)
 ```
-python test_api_gateway.py
+python testForAPI.py
 ```
 
 ### Method 2: Using the Web
@@ -67,3 +85,7 @@ python test_api_gateway.py
 3. Click "Try it out"
 4. Enter your data from the test
 5. Click "Execute"
+
+### How to stop the server
+- **PRESS** `Control+C` in the terminal
+
