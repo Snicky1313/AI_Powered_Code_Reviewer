@@ -16,7 +16,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Add CORS middleware
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory storage for submissions (in production, use a database)
+#  storage for submissions
 submissions = {}
 
 class CodeSubmission(BaseModel):
@@ -80,8 +80,7 @@ async def submit_code(submission: CodeSubmission):
         
         logger.info(f"Received submission {submission_id} from user {submission.user_id}")
         
-        # TODO: Route to analysis services (Tasks 1.3, 1.4, 1.5, etc.)
-        # For now, just acknowledge receipt
+    
         
         return SubmissionResponse(
             submission_id=submission_id,

@@ -11,12 +11,12 @@ def test_health_check():
     try:
         response = requests.get(f"{BASE_URL}/health")
         if response.status_code == 200:
-            print("✅ Health check passed")
+            print("✅ Health check has passed")
             print(f"   Response: {response.json()}")
         else:
-            print(f"❌ Health check failed: {response.status_code}")
+            print(f" The health check failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ Health check error: {e}")
+        print(f" There is a health check error: {e}")
 
 def test_root_endpoint():
     """Test the root endpoint"""
@@ -24,18 +24,18 @@ def test_root_endpoint():
     try:
         response = requests.get(f"{BASE_URL}/")
         if response.status_code == 200:
-            print("✅ Root endpoint passed")
+            print("✅ The root endpoint passed")
             print(f"   Response: {response.json()}")
         else:
-            print(f"❌ Root endpoint failed: {response.status_code}")
+            print(f" Root endpoint has failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ Root endpoint error: {e}")
+        print(f" Root endpoint has an error: {e}")
 
 def test_code_submission():
     """Test code submission"""
     print("\n🔍 Testing code submission...")
     
-    # Sample Python code
+    # Sample  code
     sample_code = """
 def calculate_factorial(n):
     if n <= 1:
@@ -68,11 +68,11 @@ print(f"Factorial of 5 is: {result}")
             print(f"   Message: {result['message']}")
             return result['submission_id']
         else:
-            print(f"❌ Code submission failed: {response.status_code}")
+            print(f" The code submission has failed: {response.status_code}")
             print(f"   Error: {response.text}")
             return None
     except Exception as e:
-        print(f"❌ Code submission error: {e}")
+        print(f" There was a code submission error: {e}")
         return None
 
 def test_get_submission(submission_id):
@@ -90,9 +90,9 @@ def test_get_submission(submission_id):
             print(f"   Language: {result['language']}")
             print(f"   Analysis Types: {result['analysis_types']}")
         else:
-            print(f"❌ Get submission failed: {response.status_code}")
+            print(f" Get submission has failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ Get submission error: {e}")
+        print(f" There was an error getting the submission: {e}")
 
 def test_list_submissions():
     """Test listing all submissions"""
@@ -105,9 +105,9 @@ def test_list_submissions():
             print(f"   Total submissions: {result['total_submissions']}")
             print(f"   Submission IDs: {result['submissions']}")
         else:
-            print(f"❌ List submissions failed: {response.status_code}")
+            print(f" List submissions failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ List submissions error: {e}")
+        print(f" List submissions error: {e}")
 
 def test_delete_submission(submission_id):
     """Test deleting a submission"""
@@ -121,16 +121,16 @@ def test_delete_submission(submission_id):
             print("✅ Delete submission passed")
             print(f"   Response: {response.json()}")
         else:
-            print(f"❌ Delete submission failed: {response.status_code}")
+            print(f" Request to delete submission failed: {response.status_code}")
     except Exception as e:
-        print(f"❌ Delete submission error: {e}")
+        print(f" Your request to delete submission error: {e}")
 
 def main():
     """Run all tests"""
     print("🚀 Starting API Gateway Tests")
     print("=" * 50)
     
-    # Wait a moment for server to be ready
+    #  for server to be ready
     time.sleep(2)
     
     # Run tests
