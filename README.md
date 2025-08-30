@@ -2,33 +2,33 @@
 An extensible AI-powered code reviewer that combines static/dynamic analysis with LLM feedback to review multi-language code.
 
 
-# API Gateway - Task 1.2
+## API Gateway - Task 1.2
 
 This is the API Gateway implementation for **Task 1.2** of the WBS: "Build interface to receive and route code subs".
 
-## Overview 
+### Overview 
 The API Gateway is in charge of:
 - Receiving code submissions from users
 - Generating unique submission IDs
 - Stores the submission data 
 - Routes it to analysis services 
 
-## Files included in Task 1.2 
+### Files included in Task 1.2 
 
 - {main.py} - Main FastAPI application
 - {requirements.txt} - is the list of Python requirements
 - {testForAPI.py} - script that tests the API's functionality
 - {README.md} - This file
 
-## Setup Instructions
-## First open a terminal on your PC (command prompt, Powershell, or VS Code Terminal)
+### Setup Instructions
+#### First open a terminal on your PC (command prompt, Powershell, or VS Code Terminal)
 
-### 1. Install requirments (run this in the project folder)
+#### 1. Install requirments (run this in the project folder)
 ```
 pip install -r requirements.txt
 ```
 
-### 2. To start the server
+#### 2. To start the server
 ```
 python api_gateway_main.py
 ```
@@ -41,21 +41,21 @@ When the server is running, open a browser and go to:
 
 
 
-## API Endpoints
+### API Endpoints
 
-### Health Check
+#### Health Check
 - **GET** `/health` - Check if the service is running
 
-### Code Submission
+#### Code Submission
 - **POST** `/submit` - Submit code for analysis
 - **GET** `/submission/{submission_id}` - Get submission details
 - **GET** `/submissions` - List all submissions
 - **DELETE** `/submission/{submission_id}` - Delete a submission
 
 
-## How to test the API Gateway
+### How to test the API Gateway
 
-### Method 1: Run the test script (do this in your terminal)
+#### Method 1: Run the test script (do this in your terminal)
 ```
 python test_api_gateway.py
 ```
