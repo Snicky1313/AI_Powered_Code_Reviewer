@@ -26,13 +26,14 @@ The API Gateway is in charge of:
 ### Click the green Code button in this repository ▸ Download ZIP
 ### Unzip the folder, then right-click the folder ▸ Open in Terminal (you can also open the folder in the VS Code app and use the built-in terminal of VS CODE). The terminal can be found at the top of your screen, naviate to that button and click "New Terminal".
 
-### In your terminal, enter:
-``` FOR Windows
+### In your terminal, enter the following:
+#### FOR Windows
+```
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 ```
-
-``` FOR Mac
+#### FOR Mac (Apple)
+``` 
 python3 -m venv .venv
 source .venv/bin/activate
 ```
