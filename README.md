@@ -24,9 +24,9 @@ The API Gateway is in charge of:
 ## Setup Instructions
 
 ### Click the green Code button in this repository ▸ Download ZIP
-### Unzip the folder, then right-click the folder ▸ Open in Terminal (you can also open the folder in the VS Code app and use the built-in terminal of VS CODE). The terminal can be found at the top of your screen, naviate to that button and click "New Terminal".
+### Unzip the folder, then right-click the folder ▸ Open in Terminal (if you have Visual Studio Code downloaded, you can also open the folder in the VS Code app and use the built-in terminal of VS CODE). The terminal can be found at the top of your screen when you load up the pp, navigate your cursor to that button and click "New Terminal".
 
-### In your terminal, enter the following:
+### In your terminal window, enter the following:
 #### FOR Windows
 ```
 python -m venv .venv
@@ -64,7 +64,7 @@ When the server is running, open a browser and go to:
 ### API Endpoints
 
 #### Health Check
-- **GET** `/health` - Check if the service is running
+- **GET** `/health` - Checks if the service is running
 
 #### Code Submission
 - **POST** `/submit` - Submits code for analysis
