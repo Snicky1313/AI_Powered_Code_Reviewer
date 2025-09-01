@@ -93,3 +93,22 @@ python testForAPI.py
 
 ## Syntax Analyzer - Task 1.3
 
+## Python Syntax Analyzer (AST)
+
+**File:** `analyzers/syntax.py`  
+**Function:** `check_python_syntax(code: str) -> dict`
+
+**What it does:**  
+Parses Python code using the standard library `ast` to catch **syntax errors** before runtime.
+
+**Return format:**
+```json
+{
+  "ok": true,                    // true if no syntax errors
+  "errors": [                    // list of errors (empty if ok=true)
+    { "line": 3, "column": 11, "message": "invalid syntax" }
+  ]
+}
+**No extra packages needed as AST is built into Python**
+
+
