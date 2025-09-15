@@ -8,7 +8,7 @@ from __future__ import annotations
 import ast
 from typing import List, Optional, Dict
 
-# ---------- small helpers ----------
+# helpers
 
 def _safe_get_line(source: str, line: int) -> str:
     lines = source.splitlines()
@@ -76,7 +76,7 @@ def _dedupe_findings(findings: List[Dict]) -> List[Dict]:
         out.append(f)
     return out
 
-# ---------- engine A: parso (preferred when available) ----------
+# ---------- engine A: parso (preferred when available - try this first) ----------
 
 def _check_with_parso(code: str, filename: Optional[str]) -> Dict:
     import parso
@@ -87,12 +87,18 @@ def _check_with_parso(code: str, filename: Optional[str]) -> Dict:
 
     def walk(node, idx_holder: Dict[str, int]):
         if isinstance(node, (ErrorLeaf, ErrorNode)):
-            (line, col) = node.get_start_pos()
-            (end_line, end_col) = node.get_end_pos()
-            frag = node.get_code().strip()
+            try:
+                (line, col) = node.get_start_pos()
+                (end_line, end_col) = node.get_end_pos()
+            except AttributeError:
+                # fallback if node doesn’t have those methods
+                line, col, end_line, end_col = 1, 1, 1, 1
+
+            frag = getattr(node, "get_code", lambda: "")().strip()
             msg = "invalid syntax" + (f" near: {frag!r}" if frag else "")
             findings.append(_finding(code, filename, "SyntaxError", msg, line, col, end_line, end_col, idx_holder["i"]))
             idx_holder["i"] += 1
+
         for child in getattr(node, "children", []) or []:
             walk(child, idx_holder)
 
@@ -100,7 +106,7 @@ def _check_with_parso(code: str, filename: Optional[str]) -> Dict:
     findings = _dedupe_findings(findings)
     return {"ok": len(findings) == 0, "findings": findings}
 
-# ---------- engine B: mask & re-parse (fallback, no deps) ----------
+# ---------- engine B: mask & re-parse (fallback, if parso not available) ----------
 
 def _check_with_masking(code: str, filename: Optional[str]) -> Dict:
     findings: List[Dict] = []
@@ -146,14 +152,17 @@ def _check_with_masking(code: str, filename: Optional[str]) -> Dict:
 # ---------- PUBLIC API ----------
 
 def check_python_syntax_all(code: str, *, filename: Optional[str] = None) -> Dict:
-    """
-    Return ALL recoverable syntax issues in a structured form.
-    Uses parso if available; otherwise falls back to iterative parsing.
-    """
     try:
-        import parso  
+        import parso
+    except ImportError:
+        print(">>> Parso not installed, using MASKING engine")
+        return _check_with_masking(code, filename)
+
+    try:
+        print(">>> Using PARSO engine")
         return _check_with_parso(code, filename)
-    except Exception:
+    except Exception as e:
+        print(f">>> Parso failed ({e}), falling back to MASKING engine")
         return _check_with_masking(code, filename)
 
 
@@ -166,12 +175,25 @@ if __name__ == "__main__":
         if report["ok"]:
             print("No syntax errors.")
             return
+        total = len(report["findings"])
+        print(f"Found {total} syntax error{'s' if total > 1 else ''}:\n")
+        
         for f in report["findings"]:
             line = f["location"]["start"]["line"]
-            message = f.get("message", "")
-            # If you also want the category (e.g., SyntaxError), uncomment next line:
-            # message = f"{f.get('category','SyntaxError')}: {message}"
-            print(f"Line {line}: {message}")
+            col  = f["location"]["start"]["column"]
+            msg  = f.get("message", "")
+            snip = f.get("snippet", "")
+            caret = f.get("caret", "")
+            sugg = f.get("suggestion", "")
+            cat  = f.get("category", "SyntaxError")
+            print(f"{cat} at Line {line}, Col {col}: {msg}")
+            if snip:
+                print(snip)
+            if caret:
+                print(caret)
+            if sugg:
+                print(f"Suggestion: {sugg}")
+            print()  # blank line between findings
 
     # If you pass a file path: python analyzers/syntax.py path\to\some_file.py
     if len(sys.argv) > 1:
@@ -188,10 +210,10 @@ if __name__ == "__main__":
 
     # If you run with no arguments, do a tiny built-in demo:
     good_code = "def ok():\n    print('hi')\n"
-    bad_code = "def x(:\n  pass\nx ==\n"
-    print("GOOD DEMO:")
+    bad_code = "if True print (hello')"
+    print("DEMO HAS NO ERRORS:")
     _print_line_and_message(check_python_syntax_all(good_code, filename="good_demo.py"))
 
-    print("\nBAD DEMO:")
+    print("\nDEMO HAS ERRORS:")
     _print_line_and_message(check_python_syntax_all(bad_code, filename="bad_demo.py"))
 
