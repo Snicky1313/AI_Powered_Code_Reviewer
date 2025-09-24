@@ -2,5 +2,8 @@ fastapi==0.104.1
 uvicorn[standard]==0.24.0
 pydantic==2.5.0
 python-multipart==0.0.6
-bandit
-parso==0.8.5
+flask==2.3.3
+parso==0.10.4
+flake8==6.1.0
+bandit==1.7.5
+openai==0.28.1v
