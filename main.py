@@ -5,9 +5,7 @@ import uuid
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
-from analyzers.aggregator import Aggregator
-from analyzers.report_aggregator import generate_report
-from storage import save_submission, load_submission
+from analyzers.syntax import check_python_syntax_all
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -42,6 +40,7 @@ class SubmissionResponse(BaseModel):
     status: str
     message: str
     timestamp: str
+    analysis_results: Optional[Dict[str, Any]] = None
 
 @app.get("/")
 async def root():
@@ -69,27 +68,39 @@ async def submit_code(submission: CodeSubmission):
         # Generate unique submission ID
         submission_id = str(uuid.uuid4())
         
-        # Store submission details
-        submissions[submission_id] = {
+        logger.info(f"Received submission {submission_id} from user {submission.user_id}")
+        
+        # Initialize analysis results
+        analysis_results = {}
+        
+        # Run syntax analysis if requested
+        if "syntax" in submission.analysis_types and submission.language.lower() == "python":
+            logger.info(f"Running syntax analysis for submission {submission_id}")
+            syntax_result = check_python_syntax_all(submission.code, filename=f"submission_{submission_id}.py")
+            analysis_results["syntax"] = syntax_result
+        
+        # Store submission details with analysis results
+        submission_data = {
             "submission_id": submission_id,
             "user_id": submission.user_id,
             "code": submission.code,
             "language": submission.language,
             "analysis_types": submission.analysis_types,
-            "status": "received",
+            "status": "analyzed",
             "timestamp": datetime.now().isoformat(),
-            "results": {}
+            "results": analysis_results
         }
         
-        logger.info(f"Received submission {submission_id} from user {submission.user_id}")
+        submissions[submission_id] = submission_data
         
-    
+        logger.info(f"Analysis completed for submission {submission_id}")
         
         return SubmissionResponse(
             submission_id=submission_id,
-            status="received",
-            message="Code submission received successfully. Analysis services will be implemented in subsequent tasks.",
-            timestamp=datetime.now().isoformat()
+            status="analyzed",
+            message="Code submission received and analyzed successfully.",
+            timestamp=datetime.now().isoformat(),
+            analysis_results=analysis_results
         )
         
     except Exception as e:
