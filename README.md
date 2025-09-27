@@ -110,13 +110,14 @@ Parses Python code using the standard library `ast` to catch **syntax errors** b
   ]
 }
 **No extra packages needed as AST is built into Python**
+```
 
 
 ## Static Analyzer - Task 1.4
 
 ## Python Static Style Analyzer (Flake8 + Custom Checks)
 
-**File:** `analyzers/staticA.py`   
+**File location:** `analyzers/staticA.py`   
 
 ### What it does
 The Static Analyzer, analyzes Python code style using flake8 along with additional custom rules.
@@ -145,5 +146,16 @@ These rules:
     "grade": "B"
   }
 }
+```
+
+## Security Scanner - Task 1.5
+
+## Performance Profiler - Task 1.6
+
+## LLM Feedback Service - Task 1.7
+
+## Report Aggregator - Task 1.8
+
+## Storage & Logging - Task 1.9
 
 
