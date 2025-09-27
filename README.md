@@ -112,3 +112,38 @@ Parses Python code using the standard library `ast` to catch **syntax errors** b
 **No extra packages needed as AST is built into Python**
 
 
+## Static Analyzer - Task 1.4
+
+## Python Static Style Analyzer (Flake8 + Custom Checks)
+
+**File:** `analyzers/staticA.py`   
+
+### What it does
+The Static Analyzer, analyzes Python code style using flake8 along with additional custom rules.
+These rules:
+- Checks for **line length violations** 
+- Detects **trailing whitespace**  
+- Detects **mixed tabs and spaces**  
+- Assigns a **style score (0–100)** with letter grade (A–F)  
+- Returns detailed **violations list** with severity levels (`error`, `warning`, `info`)  
+
+### Return format (example)
+```json
+{
+  "success": true,
+  "style_score": 85.0,
+  "violations": [
+    { "line": 3, "column": 80, "code": "E501", "text": "Line too long (95 > 79 characters)", "severity": "warning" },
+    { "line": 7, "column": 1, "code": "E101", "text": "Mixed tabs and spaces", "severity": "error" }
+  ],
+  "flake8_results": [],
+  "summary": {
+    "total_violations": 2,
+    "errors": 1,
+    "warnings": 1,
+    "info": 0,
+    "grade": "B"
+  }
+}
+
+
