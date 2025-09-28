@@ -116,25 +116,23 @@ It uses two engines:
     { "line": 3, "column": 11, "message": "invalid syntax" }
   ]
 }
-
-
-
+```
 ## Static Analyzer - Task 1.4
 
-## Python Static Style Analyzer (Flake8 + Custom Checks)
-
-**File location:** `analyzers/staticA.py`   
+**File:** `analyzers/staticA.py`  
+**Framework:** Flake8 + Custom Checks
 
 ### What it does
-The Static Analyzer, analyzes Python code style using flake8 along with additional custom rules.
-These rules:
-- Checks for **line length violations** 
+The Static Analyzer reviews Python code style using **flake8** along with additional custom rules.  
+
+### Features
+- Checks for **line length violations**  
 - Detects **trailing whitespace**  
 - Detects **mixed tabs and spaces**  
-- Assigns a **style score (0–100)** with letter grade (A–F)  
+- Assigns a **style score (0–100)** and a **letter grade (A–F)**  
 - Returns detailed **violations list** with severity levels (`error`, `warning`, `info`)  
 
-### Return format (example)
+### Example Return Format
 ```json
 {
   "success": true,
@@ -194,7 +192,7 @@ It leverages [Bandit](https://bandit.readthedocs.io/) to detect risky code patte
     }
   ]
 }
-
+```
 
 
 ## Performance Profiler - Task 1.6
