@@ -1,14 +1,14 @@
 # analyzers/syntax.py
-# Reports recoverable Python syntax issues.
-# - Tries 'parso' (if installed) to collect multiple errors.
-# - Falls back to a dependency-free mask-and-reparse loop if Parso not installed.
-# - Output can do directly to aggregator without print. Includes a small __main__ demo that does print a sample.
+# Authored by Nancy Child
+# Reports syntax issues
+# Tries 'parso' (if installed) to collect multiple errorsbut falls back to a dependency-free mask-and-reparse loop if Parso not installed
+# Output can do directly to aggregator without print. Includes a small __main__ demo that does print a sample.
 
-from __future__ import annotations
+
 import ast
 from typing import List, Optional, Dict
 
-# helpers
+# ---------- helpers ----------
 
 def _safe_get_line(source: str, line: int) -> str:
     lines = source.splitlines()
@@ -29,63 +29,37 @@ def _suggest_fix(msg: str, snippet: str) -> str:
     first = (snippet.strip().split()[:1] or [""])[0].lower()
     headers = {"def", "if", "for", "while", "elif", "else", "try", "except", "finally", "with", "class"}
 
-    # Unterminated string (explicit error or stray quote)
     if "eol while scanning string literal" in m or "unterminated string" in m:
         return "Close the string with matching quotes."
     if snippet.strip() in {"'", '"', '"""', "'''"}:
         return "You started a string but didn’t close it. Add the matching quote."
-
-    # Inconsistent tabs/spaces
     if "inconsistent use of tabs and spaces" in m:
         return "Do not mix tabs and spaces. Use only spaces (recommended, 4 per indent)."
-
-    # Indentation issues
     if "indentationerror" in m or m.startswith("expected an indented block"):
         return "Fix indentation (indent the block consistently with spaces)."
-
-    # Unexpected EOF
     if "unexpected eof while parsing" in m or "unexpected end of file" in m:
         return "Complete the unfinished block or expression."
-
-    # Assignment to literal
     if "cannot assign to" in m and "literal" in m:
         return "Left side of '=' must be a variable; use '==' for comparison if intended."
-
-    # Duplicate argument
     if "duplicate argument" in m and "function definition" in m:
         return "Each function parameter must have a unique name."
-
-    # Return/break outside valid scope
     if "'return' outside function" in m:
         return "Move 'return' inside a function definition."
     if "'break' outside loop" in m or "'continue' not properly in loop" in m:
         return "Use 'break' or 'continue' only inside a loop."
-
-    # F-string brace issues
     if "f-string" in m and "unmatched" in m:
         return "Double braces '{{ }}' if you want literal '{' characters inside an f-string."
-
-    # Invalid character (smart quotes, etc.)
     if "invalid character" in m:
         return "Replace non-standard characters (like smart quotes or dashes) with plain ASCII ones."
-
-    # Parentheses issues
     if snippet.strip() == ")":
         return "This closing parenthesis has no matching opening '(' before it."
     if "invalid syntax" in m and "(" in snippet and ")" not in snippet:
         return "Check your parentheses. Make sure each '(' has a matching ')'."
-
-    # Misplaced operator (= instead of ==)
     if "invalid syntax" in m and "=" in snippet and "==" not in snippet and any(kw in snippet for kw in ["if", "while"]):
         return "Use '==' for comparison inside conditions, not '='."
-
-    # Colon missing at header (generic, last resort)
     if "expected ':'" in m or "missing ':'" in m or ("invalid syntax" in m and first in headers):
         return "Add a colon (:) at the end of the statement header."
-
-    # Fallback
     return ""
-
 
 def _finding(
     source: str,
@@ -97,7 +71,7 @@ def _finding(
     end_line: Optional[int],
     end_col: Optional[int],
     idx: int,
-    frag: Optional[str] = None,   # 👈 NEW PARAM
+    frag: Optional[str] = None,
 ) -> Dict:
     snippet = _safe_get_line(source, line)
     return {
@@ -105,7 +79,7 @@ def _finding(
         "analyzer": "syntax",
         "category": category or "SyntaxError",
         "rule_id": "PY-SYNTAX",
-        "severity": "high",
+        "severity": "HIGH",
         "message": message,
         "filename": filename or "<string>",
         "location": {
@@ -117,11 +91,8 @@ def _finding(
         },
         "snippet": snippet,
         "caret": _make_caret(col, end_col),
-        # Prefer frag if available, else fall back to snippet
         "suggestion": _suggest_fix(message, frag or snippet) or "",
     }
-
-
 
 def _dedupe_findings(findings: List[Dict]) -> List[Dict]:
     out = []
@@ -140,7 +111,7 @@ def _dedupe_findings(findings: List[Dict]) -> List[Dict]:
         out.append(f)
     return out
 
-# ---------- engine A: parso (preferred when available - try this first) ----------
+# ---------- engine A: parso (preferred) ----------
 
 def _check_with_parso(code: str, filename: Optional[str]) -> Dict:
     import parso
@@ -155,47 +126,30 @@ def _check_with_parso(code: str, filename: Optional[str]) -> Dict:
                 (line, col) = node.get_start_pos()
                 (end_line, end_col) = node.get_end_pos()
             except AttributeError:
-                # fallback if node doesn’t have those methods
                 line, col, end_line, end_col = 1, 1, 1, 1
 
             frag = getattr(node, "get_code", lambda: "")().strip()
 
-            # --- snippet search fallback for better column accuracy ---
             if col == 1 and frag:
                 snippet_line = _safe_get_line(code, line)
                 idx = snippet_line.find(frag)
                 if idx >= 0:
-                    col = idx + 1  # 1-based
+                    col = idx + 1
 
             msg = "invalid syntax" + (f" near: {frag!r}" if frag else "")
             findings.append(
-                _finding(
-                    code,
-                    filename,
-                    "SyntaxError",
-                    msg,
-                    line,
-                    col,
-                    end_line,
-                    end_col,
-                    idx_holder["i"],
-                    frag,  # pass the actual fragment
-                )
+                _finding(code, filename, "SyntaxError", msg, line, col, end_line, end_col, idx_holder["i"], frag)
             )
             idx_holder["i"] += 1
 
         for child in getattr(node, "children", []) or []:
             walk(child, idx_holder)
 
-    # Run the walker
     walk(module, {"i": 1})
-
     findings = _dedupe_findings(findings)
-    return {"ok": len(findings) == 0, "findings": findings}
+    return {"ok": len(findings) == 0, "findings": findings, "filename": filename or "<string>"}
 
-
-
-# ---------- engine B: mask & re-parse (fallback, if parso not available) ----------
+# ---------- engine B: mask & re-parse (fallback) ----------
 
 def _check_with_masking(code: str, filename: Optional[str]) -> Dict:
     findings: List[Dict] = []
@@ -212,7 +166,7 @@ def _check_with_masking(code: str, filename: Optional[str]) -> Dict:
             line = e.lineno or 1
             col = e.offset or 1
             end_line = getattr(e, "end_lineno", None)
-            end_col  = getattr(e, "end_offset", None)
+            end_col = getattr(e, "end_offset", None)
             msg = e.msg
             cat = e.__class__.__name__
 
@@ -236,11 +190,11 @@ def _check_with_masking(code: str, filename: Optional[str]) -> Dict:
                 break
 
     findings = _dedupe_findings(findings)
-    return {"ok": len(findings) == 0, "findings": findings}
+    return {"ok": len(findings) == 0, "findings": findings, "filename": filename or "<string>"}
 
 # ---------- PUBLIC API ----------
 
-def check_python_syntax_all(code: str, *, filename: Optional[str] = None) -> Dict:
+def check_python_syntax(code: str, *, filename: Optional[str] = None) -> Dict:
     try:
         import parso
     except ImportError:
@@ -254,9 +208,7 @@ def check_python_syntax_all(code: str, *, filename: Optional[str] = None) -> Dic
         print(f">>> Parso failed ({e}), falling back to MASKING engine")
         return _check_with_masking(code, filename)
 
-
-
-# ----------------- run test directly  -----------------
+# ---------- run directly ----------
 
 def _print_line_and_message(report):
     if report["ok"]:
@@ -270,21 +222,18 @@ def _print_line_and_message(report):
         line = f["location"]["start"]["line"]
         message = f.get("message", "")
         suggestion = f.get("suggestion", "")
-
         print(f"Line {line}: {message}")
         if suggestion:
-            # Handle multiple suggestions if suggestion is a list
             if isinstance(suggestion, list):
                 for s in suggestion:
                     print(f"  Suggestion: {s}")
             else:
                 print(f"  Suggestion: {suggestion}")
-        print ()
+        print()
 
 if __name__ == "__main__":
     import sys, pathlib
 
-    # If you pass a file path: python analyzers\syntax.py path\to\some_file.py
     if len(sys.argv) > 1:
         path = sys.argv[1]
         try:
@@ -293,16 +242,16 @@ if __name__ == "__main__":
             print(f"Could not read {path}: {e}")
             sys.exit(1)
 
-        report = check_python_syntax_all(code, filename=pathlib.Path(path).name)
+        report = check_python_syntax(code, filename=pathlib.Path(path).name)
         _print_line_and_message(report)
         sys.exit(0)
 
-    # If you run with no arguments, do a tiny built-in demo:
-    good_code = "def ok():\n    print('hi')\n"
-    bad_code = "if True print (hello')"
+    # Demos
+    good_code = "def ok():\n    print('hi')\n"  # DEMO 1 no errors
+    bad_code = "if True print (hello')"          # DEMO 2 errors included
 
     print("DEMO 1 HAS NO ERRORS:")
-    _print_line_and_message(check_python_syntax_all(good_code, filename="good_demo.py"))
+    _print_line_and_message(check_python_syntax(good_code, filename="good_demo.py"))
 
     print("\nDEMO 2 HAS ERRORS:")
-    _print_line_and_message(check_python_syntax_all(bad_code, filename="bad_demo.py"))
+    _print_line_and_message(check_python_syntax(bad_code, filename="bad_demo.py"))
