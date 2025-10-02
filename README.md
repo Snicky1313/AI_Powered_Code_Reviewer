@@ -120,33 +120,76 @@ Parses Python code using the standard library `ast` to catch **syntax errors** b
 **File location:** `analyzers/staticA.py`   
 
 ### What it does
-The Static Analyzer, analyzes Python code style using flake8 along with additional custom rules.
-These rules:
-- Checks for **line length violations** 
-- Detects **trailing whitespace**  
-- Detects **mixed tabs and spaces**  
-- Assigns a **style score (0–100)** with letter grade (A–F)  
-- Returns detailed **violations list** with severity levels (`error`, `warning`, `info`)  
+**What it does:**  
+Analyzes Python code style using flake8 and custom checks for line length, whitespace, and mixed tabs/spaces.
 
-### Return format (example)
+### How to use the Style Analyzer
+
+#### 1. Start the Style Analyzer Service (do this in VS Code terminal)
+```bash
+python analyzers/staticA.py
+```
+*Service will start on http://localhost:5002, insert that website link in a different tab.*
+
+#### 2. Test the Service (Open a NEW terminal and insert these commands)
+
+**Health Check:**
+```bash
+curl -s http://localhost:5002/health
+```
+
+**Test with "bad" code (shows violations):**
+```bash
+curl -s -X POST http://localhost:5002/style \
+  -H "Content-Type: application/json" \
+  -d '{"code":"def add(a,b):\n\treturn  a+ b  \n","user_id":"demo","submission_id":"demo-1"}'
+```
+
+**Test with "good" code (minimal issues):**
+```bash
+curl -s -X POST http://localhost:5002/style \
+  -H "Content-Type: application/json" \
+  -d '{"code":"def add(a: int, b: int) -> int:\n    return a + b\n","user_id":"demo","submission_id":"demo-2"}'
+```
+
+#### 3. Expected Results
+
+**Bad code example:**
+- Style score: 70-80 (low)
+- Violations: Trailing whitespace, mixed tabs/spaces, spacing issues
+- Grade: B or C
+
+**Good code example:**
+- Style score: 90-100 (high)
+- Violations: Minimal or none
+- Grade: A
+
+#### 4. Return Format
 ```json
 {
   "success": true,
   "style_score": 85.0,
   "violations": [
-    { "line": 3, "column": 80, "code": "E501", "text": "Line too long (95 > 79 characters)", "severity": "warning" },
-    { "line": 7, "column": 1, "code": "E101", "text": "Mixed tabs and spaces", "severity": "error" }
+    {
+      "line": 2,
+      "column": 8,
+      "code": "E101",
+      "text": "Mixed tabs and spaces",
+      "severity": "error"
+    }
   ],
-  "flake8_results": [],
+  "flake8_results": [...],
   "summary": {
-    "total_violations": 2,
+    "total_violations": 3,
     "errors": 1,
-    "warnings": 1,
-    "info": 0,
+    "warnings": 2,
     "grade": "B"
   }
 }
 ```
+
+#### 5. How to Stop the Service
+Press `Ctrl+C` in the terminal where the service is running.
 
 ## Security Scanner - Task 1.5
 
