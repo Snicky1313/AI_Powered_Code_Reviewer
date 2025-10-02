@@ -7,3 +7,4 @@ parso
 flake8==6.1.0
 bandit==1.7.5
 openai==0.28.1
+requests>=2.31.0
