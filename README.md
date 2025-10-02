@@ -115,8 +115,6 @@ Parses Python code using the standard library `ast` to catch **syntax errors** b
 
 ## Static Analyzer - Task 1.4
 
-## Python Static Style Analyzer (Flake8 + Custom Checks)
-
 **File location:** `analyzers/staticA.py`   
 
 ### What it does
