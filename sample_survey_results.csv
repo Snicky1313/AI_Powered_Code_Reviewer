@@ -1,0 +1,12 @@
+user_id,q1,q2,q3,q4,q5,q6,q7,q8,q9,q10,qualitative_feedback
+user001,5,1,5,2,4,1,5,2,5,1,"The integration is seamless! I wish I could one-click apply the suggestions."
+user002,4,2,5,1,5,2,4,1,4,2,"Very helpful, but sometimes the AI comments are too long."
+user003,5,1,4,1,5,1,5,1,5,1,"Excellent tool, a real time-saver."
+user004,3,3,4,2,4,2,3,3,4,2,"Good concept but needs more polish in the UI."
+user005,5,1,5,1,5,1,5,1,5,1,"Outstanding! This has revolutionized my code review process."
+user006,4,2,4,2,3,3,4,2,4,2,"Helpful but could be faster. Sometimes takes too long to analyze."
+user007,2,4,3,3,3,3,2,4,3,3,"Not bad but I expected more from an AI tool."
+user008,5,1,5,1,4,2,5,1,5,1,"Love it! The suggestions are spot-on most of the time."
+user009,4,2,4,2,4,2,4,2,3,3,"Decent tool, room for improvement in accuracy."
+user010,5,1,5,1,5,1,5,1,5,1,"Perfect! Exactly what I needed for my development workflow."
+

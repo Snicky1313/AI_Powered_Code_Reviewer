@@ -91,48 +91,44 @@ python testForAPI.py
 - **PRESS** `Control+C` in the terminal
 
 
-
 ## Syntax Analyzer - Task 1.3
+
+## Python Syntax Analyzer (AST)
 
 **File:** `analyzers/syntax.py`  
 **Function:** `check_python_syntax(code: str) -> dict`
 
-### What it does
-The Syntax Analyzer checks Python code for **syntax errors** before runtime.  
-It uses two engines:
-- **Parso** (preferred, if installed) – collects multiple errors in one pass  
-- **AST (Abstract Syntax Trees)** – a built-in backup parser, runs if Parso isn’t available  
+**What it does:**  
+Parses Python code using the standard library `ast` to catch **syntax errors** before runtime.
 
-### Features
-- Detects syntax errors with line and column numbers  
-- Provides a clear error message  
-- Returns results in a structured JSON-like format  
-
-### Example Return Format
+**Return format:**
 ```json
 {
-  "ok": true,                    
-  "errors": [                    
+  "ok": true,                    // true if no syntax errors
+  "errors": [                    // list of errors (empty if ok=true)
     { "line": 3, "column": 11, "message": "invalid syntax" }
   ]
 }
+**No extra packages needed as AST is built into Python**
 ```
+
+
 ## Static Analyzer - Task 1.4
 
-**File:** `analyzers/staticA.py`  
-**Framework:** Flake8 + Custom Checks
+## Python Static Style Analyzer (Flake8 + Custom Checks)
+
+**File location:** `analyzers/staticA.py`   
 
 ### What it does
-The Static Analyzer reviews Python code style using **flake8** along with additional custom rules.  
-
-### Features
-- Checks for **line length violations**  
+The Static Analyzer, analyzes Python code style using flake8 along with additional custom rules.
+These rules:
+- Checks for **line length violations** 
 - Detects **trailing whitespace**  
 - Detects **mixed tabs and spaces**  
-- Assigns a **style score (0–100)** and a **letter grade (A–F)**  
+- Assigns a **style score (0–100)** with letter grade (A–F)  
 - Returns detailed **violations list** with severity levels (`error`, `warning`, `info`)  
 
-### Example Return Format
+### Return format (example)
 ```json
 {
   "success": true,
@@ -153,47 +149,6 @@ The Static Analyzer reviews Python code style using **flake8** along with additi
 ```
 
 ## Security Scanner - Task 1.5
-
-**File:** `analyzers/security.py`  
-**Framework:** Bandit (with custom suggestion mapping)
-
-### What it does
-The Security Scanner checks Python code for **common security vulnerabilities**.  
-It leverages [Bandit](https://bandit.readthedocs.io/) to detect risky code patterns and then maps those findings to **human-friendly suggestions** for remediation.
-
-### Features
-- Detects insecure use of functions and libraries:
-  - `subprocess` with `shell=True`
-  - Insecure deserialization (`pickle`, `yaml.load`)
-  - Weak cryptography and hashing
-  - Hardcoded passwords and secrets
-  - Unsafe XML parsing
-- Adds clear remediation advice for each finding
-- Returns structured JSON-like output for the aggregator
-
-### Example Return Format
-```json
-{
-  "success": true,
-  "issues": [
-    {
-      "line": 12,
-      "code": "B602",
-      "text": "subprocess call with shell=True",
-      "severity": "high",
-      "suggestion": "Avoid shell=True; use list arguments instead"
-    },
-    {
-      "line": 27,
-      "code": "B301",
-      "text": "pickle.load() is unsafe",
-      "severity": "medium",
-      "suggestion": "Use safer serialization (e.g., json) instead of pickle"
-    }
-  ]
-}
-```
-
 
 ## Performance Profiler - Task 1.6
 
