@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Reviewer</title> <!--Website titling-->
+
+    <!--css file-->
+    <link href ="style.css" rel="stylesheet">
+
+    <!--Font family import-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+
+</head>
+<body>
+    <!--nav center-->
+
+    <div class="m-wrapper">
+        <header>
+
+            <nav>
+                <img src="imgs/crlogo.png"  width="180px" alt="C.Reviewer">
+                <ul class="sidebar">
+                    <li style="list-style-type: none;" onclick=hideSidebar()><a href="#"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z"/></svg></a></li>
+                </ul>
+               
+            </nav>
+            
+        <header>
+
+    </div>
+
+    <!----structuring setup----->
+
+
+    <!---main chat container---->
+    <div class="main-container">
+        <span>Temp-TextMain-container.</span> <!---using this text for testings-->
+        <span><br></span>
+
+        <!--Main text that sits in chat box will dissapea work in progress-->
+        <p id="main_text1">
+        <span> <br>Paste your code.</span>
+        <span><br>Send follow up questions.</span>
+        <span><br>All viewed here in this section.</span>
+        </p>
+
+        <!--chat input section-->                
+        <div class="chat-input">
+            <textarea name="" id="" cols="17" rows="0" placeholder="Send question here.."></textarea>
+        </div>
+
+    </div>
+
+
+
+</body>
+<script> src ="script.js"</script> <!--linking js file-->
+
+<!----temp sidebar functionality refine further-->
+<script>
+    function showSidebar(){
+        const sidebar = document.querySelector('.sidebar')
+        sidebar.style.display = flex
+    }
+
+    function  hideSidebar(){
+    const sidebar = document.querySelector('.sidebar')
+    sidebar.style.display = 'none'
+
+}
+</script>
+</html>
+
+<!-----TODO FUTURE INCREMENTS:
+- work on nav functionality
+- dual window functionality
+-tweak ui
+-further adjustments if need be
+-->

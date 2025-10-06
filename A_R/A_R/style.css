@@ -1,0 +1,123 @@
+/*main.html css set up.*/
+
+
+body{
+    background-color: #181F27;
+    font-family: "Instrument sans", sans-serif;
+    font-style: normal;
+}
+
+.m-wrapper{
+    /*border: 5px dotted blue; remove later, this is used for adjusting/testing..*/
+    height: 100px;
+}
+
+header{
+    display: flex;
+    justify-content: center;
+    border-bottom: 2px solid #2F3A5E;
+
+
+}
+
+header img{
+    /*border: 5px solid green; remove later used for adjusting..*/
+}
+
+.sidebar{
+    /*border: 5px dotted pink;*/
+    position: absolute;
+    margin: 0 auto;
+    background-color: #181F27;
+    left: 30px;
+    top: 40px;
+    z-index: -1;
+    text-decoration: none;
+}
+
+
+.m-wrapper, header, nav, .sidebar{
+    right: 400px;
+}
+
+
+
+/*main container div section*/
+
+div.main-container{
+    line-height: 30px; /*spacing between the lines*/
+
+}
+
+.main-container {
+    background: #D9D9D9;
+    width: 500px; /*main size/*/
+    max-width: 1000px; /*allow container to grow to a center point.*/
+
+    margin: 0 auto; /*center main-container div element*/
+
+    margin-top: 50px; /*seperate nv and main-container*/
+
+
+    height: 400px;
+    padding: 20px;
+    overflow: hidden;
+    overflow-wrap: break-word;
+    border-radius: 20px; /*rounded corners*/
+
+}
+
+/*The text that sits in main container*/
+#main_text1{
+    font-size: 20px;
+    color: #616161;
+}
+
+
+/*div input*/
+/*Send input text box section*/
+.main-container .chat-input{
+    position: absolute; /*keep the chat on top*/
+    padding-top: 190px;
+    
+}
+
+
+/*this makes the input box seperate from the chat box but they are still in one DIV!*/
+.chat-input textarea{
+
+    background-color: #323F4D;
+
+
+    margin-top: 50px;
+    margin-left: -15px;
+    width: 510px;
+
+    height: 30px;
+
+    border: none;
+    border-radius: 20px;
+    outline: none;
+    resize: none;
+    padding: 10px;
+    overflow-y: scroll;
+    caret-color: white;
+}
+
+/*change textbox font color*/
+.chat-input textarea::placeholder{
+    color: white;
+}
+
+
+h1{
+    /*temp*/
+}
+
+h2{
+    /*temp*/
+}
+
+h3{
+    /*temp*/
+}
