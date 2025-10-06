@@ -195,6 +195,196 @@ Press `Ctrl+C` in the terminal where the service is running.
 
 ## LLM Feedback Service - Task 1.7
 
+**File location:** `analyzers/llm_feedback.py`
+
+### What it does
+Uses OpenAI's ChatGPT (GPT-3.5-turbo) to generate human-readable, actionable feedback on code based on automated analysis results from syntax, style, and security analyzers. Provides comprehensive insights, recommendations, and learning points for developers.
+
+### Features
+- **AI-Powered Feedback**: Generates natural language feedback using ChatGPT
+- **Context-Aware Analysis**: Considers results from all other analyzers (syntax, style, security)
+- **Structured Output**: Returns both raw feedback and structured analysis
+- **Error Handling**: Graceful handling of API errors, rate limits, and timeouts
+- **Integration Ready**: Works standalone or integrated with the main API Gateway
+
+### Prerequisites
+
+#### 1. OpenAI API Key
+You need an OpenAI API key to use this service:
+1. Go to https://platform.openai.com/api-keys
+2. Create a new API key
+3. Set the environment variable:
+
+**On Linux/Mac:**
+```bash
+export OPENAI_API_KEY='your-api-key-here'
+```
+
+**On Windows (PowerShell):**
+```powershell
+$env:OPENAI_API_KEY='your-api-key-here'
+```
+
+### How to use the LLM Feedback Service
+
+#### 1. Start the LLM Feedback Service (do this in VS Code terminal)
+```bash
+python analyzers/llm_feedback.py
+```
+*Service will start on http://localhost:5003*
+
+#### 2. Test the Service
+
+**Health Check:**
+```bash
+curl -s http://localhost:5003/health
+```
+
+**API Connectivity Test:**
+```bash
+curl -s http://localhost:5003/test
+```
+
+**Generate Feedback (Example):**
+```bash
+curl -s -X POST http://localhost:5003/feedback \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "def add(a, b):\n    return a + b\n",
+    "analysis_results": {
+      "syntax": {"ok": true, "findings": []},
+      "style": {"style_score": 95.0, "grade": "A"}
+    },
+    "user_id": "demo",
+    "submission_id": "demo-1"
+  }'
+```
+
+#### 3. Run Comprehensive Tests
+We've provided a complete test suite:
+```bash
+python test_llm_service.py
+```
+
+This will run 6 tests:
+1. ✓ Health Check
+2. ✓ OpenAI API Connectivity
+3. ✓ Feedback for Good Code
+4. ✓ Feedback for Code with Issues
+5. ✓ Feedback for Security Issues
+6. ✓ End-to-End Integration Test
+
+#### 4. Using with API Gateway
+
+The LLM service is automatically integrated with the main API Gateway. When submitting code:
+
+```bash
+curl -X POST http://localhost:8000/submit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "def hello():\n    print(\"Hello World\")\n",
+    "user_id": "user123",
+    "language": "python",
+    "analysis_types": ["syntax", "style"],
+    "include_llm_feedback": true
+  }'
+```
+
+The response will include an `llm_feedback` section with AI-generated insights.
+
+#### 5. Return Format
+```json
+{
+  "success": true,
+  "feedback": "## Overall Assessment\n\nYour code demonstrates...",
+  "structured_feedback": {
+    "overall_status": "good",
+    "total_issues": 0,
+    "critical_issues": 0,
+    "categories": {
+      "syntax": true,
+      "style": true,
+      "security": false
+    }
+  },
+  "summary": {
+    "analyzers_run": ["syntax", "style"],
+    "issues_by_category": {"syntax": 0, "style": 0},
+    "overall_grade": "A"
+  },
+  "model_used": "gpt-3.5-turbo",
+  "tokens_used": 450
+}
+```
+
+#### 6. Configuration Options
+
+You can customize the service using environment variables:
+
+```bash
+# OpenAI API Key (required)
+export OPENAI_API_KEY='your-api-key-here'
+
+# LLM Service URL (for API Gateway)
+export LLM_FEEDBACK_URL='http://localhost:5003/feedback'
+
+# Service Port
+export LLM_FEEDBACK_PORT=5003
+```
+
+#### 7. How to Stop the Service
+Press `Ctrl+C` in the terminal where the service is running.
+
+### Troubleshooting
+
+**Issue: "OpenAI API key not configured"**
+- Solution: Set the `OPENAI_API_KEY` environment variable
+
+**Issue: "API rate limit exceeded"**
+- Solution: Wait a few minutes and try again, or upgrade your OpenAI plan
+
+**Issue: "Service unavailable" when using API Gateway**
+- Solution: Make sure the LLM service is running on port 5003
+
+**Issue: Connection timeout**
+- Solution: Check your internet connection and OpenAI API status
+
+### What the AI Feedback Includes
+
+The LLM-generated feedback typically contains:
+
+1. **Overall Assessment**: Brief summary of code quality
+2. **Strengths**: What the code does well
+3. **Issues**: Detailed explanation of problems found
+4. **Recommendations**: Specific, actionable improvements
+5. **Code Examples**: Improved code snippets (when applicable)
+6. **Learning Points**: Educational insights for improvement
+
+### Example Output
+
+For code with issues:
+```
+## Overall Assessment
+The code has several syntax errors and style violations that need attention.
+
+## Issues Found
+
+1. **Syntax Error (Line 4)**: Missing colon after if statement
+   - Add `:` at the end of line 4
+
+2. **Style Issue (Line 2)**: Mixed tabs and spaces
+   - Use only spaces (4 per indent level)
+
+## Recommendations
+
+1. Enable your IDE's Python linter to catch syntax errors
+2. Configure your editor to use spaces instead of tabs
+3. Consider using a formatter like Black or autopep8
+
+## Improved Code
+[AI provides corrected version]
+```
+
 ## Report Aggregator - Task 1.8
 
 ## Storage & Logging - Task 1.9
