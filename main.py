@@ -5,6 +5,8 @@ import uuid
 import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
+import os
+import requests
 from analyzers.aggregator import Aggregator
 from analyzers.report_aggregator import generate_report
 from analyzers.syntax import check_python_syntax_all
@@ -37,6 +39,7 @@ class CodeSubmission(BaseModel):
     user_id: str
     language: str = "python"
     analysis_types: Optional[list] = ["syntax", "style", "security"]
+    include_llm_feedback: bool = True
 
 class SubmissionResponse(BaseModel):
     submission_id: str
@@ -100,6 +103,19 @@ async def submit_code(submission: CodeSubmission):
                     "error": f"Style analysis failed: {str(e)}"
                 }
         
+        # Generate LLM feedback if requested and analysis results exist
+        if submission.include_llm_feedback and analysis_results:
+            logger.info(f"Generating LLM feedback for submission {submission_id}")
+            llm_result = _call_llm_service(
+                submission.code,
+                analysis_results,
+                submission.user_id,
+                submission_id
+            )
+            if llm_result:
+                aggregator.add_result("llm_feedback", llm_result)
+                analysis_results["llm_feedback"] = llm_result
+        
         # Generate comprehensive report
         report = generate_report(aggregator.get_aggregated_results(), submission_id)
         
@@ -160,6 +176,66 @@ async def delete_submission(submission_id: str):
     del submissions[submission_id]
     return {"message": f"Submission {submission_id} deleted successfully"}
 
+def _call_llm_service(code: str, analysis_results: Dict[str, Any], user_id: str, submission_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Call the LLM Feedback Service to generate human-readable feedback.
+    
+    Args:
+        code: Source code
+        analysis_results: Combined analysis results from other analyzers
+        user_id: User identifier
+        submission_id: Submission identifier
+        
+    Returns:
+        LLM feedback result or None if service is unavailable
+    """
+    try:
+        llm_service_url = os.getenv('LLM_FEEDBACK_URL', 'http://localhost:5003/feedback')
+        
+        response = requests.post(
+            llm_service_url,
+            json={
+                'code': code,
+                'analysis_results': analysis_results,
+                'user_id': user_id,
+                'submission_id': submission_id
+            },
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logger.warning(f"LLM service returned status {response.status_code}")
+            return {
+                "success": False,
+                "error": f"LLM service error: {response.status_code}",
+                "message": "Unable to generate AI feedback at this time"
+            }
+            
+    except requests.exceptions.Timeout:
+        logger.warning("LLM service request timed out")
+        return {
+            "success": False,
+            "error": "Request timeout",
+            "message": "AI feedback generation timed out"
+        }
+    except requests.exceptions.ConnectionError:
+        logger.warning("Could not connect to LLM service")
+        return {
+            "success": False,
+            "error": "Service unavailable",
+            "message": "AI feedback service is currently unavailable"
+        }
+    except Exception as e:
+        logger.error(f"Error calling LLM service: {str(e)}")
+        return {
+            "success": False,
+            "error": str(e),
+            "message": "Unable to generate AI feedback"
+        }
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv('API_GATEWAY_PORT', 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
