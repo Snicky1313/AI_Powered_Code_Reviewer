@@ -133,22 +133,21 @@ echo "║   ✅ Setup Complete!                                         ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo ""
 
-# Step 9: Show next steps
+# Step 9: Show next steps (with updated paths)
 echo "📝 Next Steps:"
 echo ""
 echo "1️⃣  Activate the virtual environment (in new terminals):"
 echo "   source .venv/bin/activate"
 echo ""
 echo "2️⃣  Start the LLM Feedback Service:"
-echo "   ./start_llm_service.sh"
+echo "   bash scripts/start_llm_service.sh"
 echo ""
 echo "3️⃣  Run tests:"
-echo "   python test_llm_service.py"
+echo "   PYTHONPATH=src pytest tests/"
 echo ""
-echo "4️⃣  Start the API Gateway (in another terminal):"
-echo "   python main.py"
+echo "4️⃣  Start the main app (API gateway or CLI):"
+echo "   PYTHONPATH=src python -m ai_code_reviewer.main"
 echo ""
-
 if [ "$API_KEY_SET" = false ]; then
     echo "⚠️  REMINDER: Don't forget to set your OpenAI API key in .env"
     echo ""
@@ -156,6 +155,5 @@ fi
 
 echo "💡 Tip: To deactivate the virtual environment later, just type: deactivate"
 echo ""
-echo "📚 For more information, see SETUP_GUIDE.md"
+echo "📚 For more information, see docs/SETUP_GUIDE.md"
 echo ""
-

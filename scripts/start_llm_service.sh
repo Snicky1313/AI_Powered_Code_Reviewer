@@ -29,5 +29,5 @@ echo "Press Ctrl+C to stop the service"
 echo ""
 
 # Start the service
-python analyzers/llm_feedback.py
+PYTHONPATH=${PYTHONPATH:-src} python -m ai_code_reviewer.analyzers.llm_feedback
 

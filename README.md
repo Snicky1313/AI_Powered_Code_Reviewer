@@ -95,7 +95,7 @@ python testForAPI.py
 
 ## Python Syntax Analyzer (AST)
 
-**File:** `analyzers/syntax.py`  
+**File:** `ai_code_reviewer.analyzers.syntax.py`  
 **Function:** `check_python_syntax(code: str) -> dict`
 
 **What it does:**  
@@ -115,7 +115,7 @@ Parses Python code using the standard library `ast` to catch **syntax errors** b
 
 ## Static Analyzer - Task 1.4
 
-**File location:** `analyzers/staticA.py`   
+**File location:** `ai_code_reviewer.analyzers.staticA.py`   
 
 ### What it does
 **What it does:**  
@@ -125,7 +125,7 @@ Analyzes Python code style using flake8 and custom checks for line length, white
 
 #### 1. Start the Style Analyzer Service (do this in VS Code terminal)
 ```bash
-python analyzers/staticA.py
+python ai_code_reviewer.analyzers.staticA.py
 ```
 *Service will start on http://localhost:5002, insert that website link in a different tab.*
 
@@ -195,7 +195,7 @@ Press `Ctrl+C` in the terminal where the service is running.
 
 ## LLM Feedback Service - Task 1.7
 
-**File location:** `analyzers/llm_feedback.py`
+**File location:** `ai_code_reviewer.analyzers.llm_feedback.py`
 
 ### What it does
 Uses OpenAI's ChatGPT (GPT-3.5-turbo) to generate human-readable, actionable feedback on code based on automated analysis results from syntax, style, and security analyzers. Provides comprehensive insights, recommendations, and learning points for developers.
@@ -229,7 +229,7 @@ $env:OPENAI_API_KEY='your-api-key-here'
 
 #### 1. Start the LLM Feedback Service (do this in VS Code terminal)
 ```bash
-python analyzers/llm_feedback.py
+python ai_code_reviewer.analyzers.llm_feedback.py
 ```
 *Service will start on http://localhost:5003*
 

@@ -10,7 +10,7 @@ I have successfully completed a **deep review of your codebase** and **fully imp
 
 ### 🆕 5 New Files Created
 
-1. **`analyzers/llm_feedback.py`** (568 lines, 18KB)
+1. **`ai_code_reviewer.analyzers.llm_feedback.py`** (568 lines, 18KB)
    - Complete LLM Feedback Service implementation
    - Flask REST API with 3 endpoints (`/health`, `/test`, `/feedback`)
    - OpenAI GPT-3.5-turbo integration
@@ -164,7 +164,7 @@ export OPENAI_API_KEY='your-api-key-here'
 ./start_llm_service.sh
 
 # Option 2: Start directly
-python analyzers/llm_feedback.py
+python ai_code_reviewer.analyzers.llm_feedback.py
 ```
 
 The service will start on `http://localhost:5003`
@@ -269,10 +269,10 @@ curl -X POST http://localhost:8000/submit \
 **Issue:** Import error preventing API Gateway from starting
 ```python
 # Before (BROKEN)
-from analyzers.syntax import check_python_syntax_all  # This function doesn't exist!
+from ai_code_reviewer.analyzers.syntax import check_python_syntax_all  # This function doesn't exist!
 
 # After (FIXED)
-from analyzers.syntax import check_python_syntax
+from ai_code_reviewer.analyzers.syntax import check_python_syntax
 ```
 
 **Impact:** API Gateway now works correctly with the syntax analyzer
@@ -498,7 +498,7 @@ export OPENAI_API_KEY='your-api-key-here'
 curl http://localhost:5003/health
 
 # If not running, start it
-python analyzers/llm_feedback.py
+python ai_code_reviewer.analyzers.llm_feedback.py
 ```
 
 **Problem**: Service won't start
@@ -507,7 +507,7 @@ python analyzers/llm_feedback.py
 netstat -an | grep 5003
 
 # Try a different port
-LLM_FEEDBACK_PORT=5004 python analyzers/llm_feedback.py
+LLM_FEEDBACK_PORT=5004 python ai_code_reviewer.analyzers.llm_feedback.py
 ```
 
 ### Getting Help
@@ -536,7 +536,7 @@ LLM_FEEDBACK_PORT=5004 python analyzers/llm_feedback.py
 ## 📝 Files Summary
 
 ### Created (7 files)
-1. `analyzers/llm_feedback.py` - Main service (568 lines)
+1. `ai_code_reviewer.analyzers.llm_feedback.py` - Main service (568 lines)
 2. `test_llm_service.py` - Test suite (463 lines)
 3. `start_llm_service.sh` - Quick start script
 4. `TASK_1_7_IMPLEMENTATION.md` - Technical docs

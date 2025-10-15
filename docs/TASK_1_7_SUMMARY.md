@@ -47,7 +47,7 @@ python test_llm_service.py
 
 ### ✨ New Files (10)
 
-1. **`analyzers/llm_feedback.py`** (484 lines, 18KB)
+1. **`ai_code_reviewer.analyzers.llm_feedback.py`** (484 lines, 18KB)
    - Main LLM Feedback Service implementation
    - Flask API with 3 endpoints
    - OpenAI ChatGPT integration
@@ -175,7 +175,7 @@ source .venv/bin/activate
 ./start_llm_service.sh
 
 # Option 2: Run directly
-python analyzers/llm_feedback.py
+python ai_code_reviewer.analyzers.llm_feedback.py
 ```
 
 ### Important: Virtual Environment

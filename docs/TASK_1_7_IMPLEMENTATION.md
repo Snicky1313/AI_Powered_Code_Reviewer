@@ -48,7 +48,7 @@ python test_llm_service.py
 
 ## 📦 What Was Implemented
 
-### 1. Core Service: `analyzers/llm_feedback.py`
+### 1. Core Service: `ai_code_reviewer.analyzers.llm_feedback.py`
 - **LLMFeedbackService class**: Complete service for generating AI feedback
 - **Flask API endpoints**: RESTful interface for the service
 - **OpenAI Integration**: Uses GPT-3.5-turbo for feedback generation
@@ -216,7 +216,7 @@ $env:OPENAI_API_KEY='your-api-key-here'
 source .venv/bin/activate
 
 # Start the service
-python analyzers/llm_feedback.py
+python ai_code_reviewer.analyzers.llm_feedback.py
 ```
 
 The service will start on `http://localhost:5003`
@@ -607,7 +607,7 @@ curl http://localhost:5003/health
 
 # If not running, start it
 source .venv/bin/activate
-python analyzers/llm_feedback.py
+python ai_code_reviewer.analyzers.llm_feedback.py
 ```
 
 **Issue: "Connection refused"**
@@ -621,7 +621,7 @@ netstat -an | grep 5003  # Linux/Mac
 netstat -an | findstr 5003  # Windows
 
 # Try a different port
-LLM_FEEDBACK_PORT=5004 python analyzers/llm_feedback.py
+LLM_FEEDBACK_PORT=5004 python ai_code_reviewer.analyzers.llm_feedback.py
 ```
 
 **Issue: Timeout errors**
@@ -646,7 +646,7 @@ chmod +x test_llm_service.py
 # Solution: Start service first
 # Terminal 1:
 source .venv/bin/activate
-python analyzers/llm_feedback.py
+python ai_code_reviewer.analyzers.llm_feedback.py
 
 # Terminal 2:
 source .venv/bin/activate
@@ -714,7 +714,7 @@ python test_llm_service.py
 ### Example 1: Standalone Usage
 
 ```python
-from analyzers.llm_feedback import LLMFeedbackService
+from ai_code_reviewer.analyzers.llm_feedback import LLMFeedbackService
 import os
 
 # Initialize service
@@ -768,7 +768,7 @@ print(llm_feedback['feedback'])
 ## ✅ Implementation Checklist
 
 ### Core Implementation
-- [x] Create LLM Feedback Service (`analyzers/llm_feedback.py`)
+- [x] Create LLM Feedback Service (`ai_code_reviewer.analyzers.llm_feedback.py`)
 - [x] Integrate with OpenAI API (GPT-3.5-turbo)
 - [x] Add Flask endpoints (health, test, feedback)
 - [x] Fix bug in main.py (import error)

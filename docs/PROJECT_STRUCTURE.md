@@ -11,14 +11,14 @@ AI_Code_Reviewer-main/
 │   └── requirements.txt                 # Python dependencies
 │
 ├── 🔍 Analyzers (Microservices)
-│   ├── analyzers/
+│   ├── ai_code_reviewer.analyzers.
 │   │   ├── syntax.py                    # Task 1.3: Syntax Analyzer ✅
 │   │   ├── staticA.py                   # Task 1.4: Static/Style Analyzer ✅
 │   │   ├── security.py                  # Task 1.5: Security Scanner ✅
 │   │   └── llm_feedback.py              # Task 1.7: LLM Feedback Service ✅ NEW!
 │
 ├── 📝 Logging & Storage (Task 1.9)
-│   └── logging_service/
+│   └── ai_code_reviewer.logging_service.
 │       ├── producer.py                  # Log producer (FastAPI) ✅
 │       ├── consumer.py                  # Log consumer ✅
 │       ├── simple_queue.py              # In-memory queue ✅
@@ -88,13 +88,13 @@ AI_Code_Reviewer-main/
 | WBS Task | Component | Status | Port | File |
 |----------|-----------|--------|------|------|
 | 1.2 | API Gateway | ✅ Complete | 8000 | `main.py` |
-| 1.3 | Syntax Analyzer | ✅ Complete | N/A | `analyzers/syntax.py` |
-| 1.4 | Static/Style Analyzer | ✅ Complete | 5002 | `analyzers/staticA.py` |
-| 1.5 | Security Scanner | ✅ Complete | N/A | `analyzers/security.py` |
+| 1.3 | Syntax Analyzer | ✅ Complete | N/A | `ai_code_reviewer.analyzers.syntax.py` |
+| 1.4 | Static/Style Analyzer | ✅ Complete | 5002 | `ai_code_reviewer.analyzers.staticA.py` |
+| 1.5 | Security Scanner | ✅ Complete | N/A | `ai_code_reviewer.analyzers.security.py` |
 | 1.6 | Performance Profiler | ❌ Not Implemented | - | - |
-| **1.7** | **LLM Feedback Service** | **✅ Complete** | **5003** | **`analyzers/llm_feedback.py`** |
+| **1.7** | **LLM Feedback Service** | **✅ Complete** | **5003** | **`ai_code_reviewer.analyzers.llm_feedback.py`** |
 | 1.8 | Report Aggregator | ❌ Not Implemented | - | - |
-| 1.9 | Storage & Logging | ✅ Complete | 8001 | `logging_service/` |
+| 1.9 | Storage & Logging | ✅ Complete | 8001 | `ai_code_reviewer.logging_service.` |
 
 ---
 
@@ -102,7 +102,7 @@ AI_Code_Reviewer-main/
 
 ### New Files (5)
 
-1. **analyzers/llm_feedback.py** (18KB)
+1. **ai_code_reviewer.analyzers.llm_feedback.py** (18KB)
    - Main implementation
    - LLMFeedbackService class
    - Flask API endpoints
@@ -176,24 +176,24 @@ AI_Code_Reviewer-main/
 python main.py
 
 # Terminal 2: Style Analyzer
-python analyzers/staticA.py
+python ai_code_reviewer.analyzers.staticA.py
 
 # Terminal 3: LLM Feedback Service
 export OPENAI_API_KEY='your-key'
 ./start_llm_service.sh
 
 # Terminal 4: Logging Service Producer
-python logging_service/producer.py
+python ai_code_reviewer.logging_service.producer.py
 
 # Terminal 5: Logging Service Consumer
-python logging_service/consumer.py
+python ai_code_reviewer.logging_service.consumer.py
 ```
 
 ### Running Just LLM Service
 
 ```bash
 export OPENAI_API_KEY='your-key'
-python analyzers/llm_feedback.py
+python ai_code_reviewer.analyzers.llm_feedback.py
 ```
 
 ---
@@ -220,7 +220,7 @@ python test_llm_service.py
 python testForAPI.py
 
 # Test Logging Service
-python logging_service/test_logging_service.py
+python ai_code_reviewer.logging_service.test_logging_service.py
 
 # Manual API Tests
 curl http://localhost:8000/health
@@ -277,12 +277,12 @@ export DATABASE_PASSWORD='your-password'
 
 | File | Lines | Size | Language |
 |------|-------|------|----------|
-| analyzers/llm_feedback.py | 568 | 18KB | Python |
+| ai_code_reviewer.analyzers.llm_feedback.py | 568 | 18KB | Python |
 | main.py | 212 | 7KB | Python |
 | test_llm_service.py | 463 | 13KB | Python |
-| analyzers/syntax.py | 258 | 9.3KB | Python |
-| analyzers/staticA.py | 228 | 8KB | Python |
-| analyzers/security.py | 177 | 6.3KB | Python |
+| ai_code_reviewer.analyzers.syntax.py | 258 | 9.3KB | Python |
+| ai_code_reviewer.analyzers.staticA.py | 228 | 8KB | Python |
+| ai_code_reviewer.analyzers.security.py | 177 | 6.3KB | Python |
 
 **Total New Code (Task 1.7)**: ~1,200 lines
 

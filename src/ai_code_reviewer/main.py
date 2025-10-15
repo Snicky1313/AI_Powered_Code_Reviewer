@@ -7,9 +7,9 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import os
 import requests
-from analyzers.aggregator import Aggregator
-from analyzers.report_aggregator import generate_report
-from analyzers.syntax import check_python_syntax_all
+from ai_code_reviewer.analyzers.aggregator import Aggregator
+from ai_code_reviewer.analyzers.report_aggregator import generate_report
+from ai_code_reviewer.analyzers.syntax import check_python_syntax_all
 from storage import save_submission, load_submission
 
 # Configure logging

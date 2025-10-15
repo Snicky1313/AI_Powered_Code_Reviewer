@@ -174,10 +174,10 @@ python test_llm_service.py
 python main.py
 
 # Terminal 2: LLM Feedback Service
-python analyzers/llm_feedback.py
+python ai_code_reviewer.analyzers.llm_feedback.py
 
 # Terminal 3: Style Analyzer
-python analyzers/staticA.py
+python ai_code_reviewer.analyzers.staticA.py
 ```
 
 ---

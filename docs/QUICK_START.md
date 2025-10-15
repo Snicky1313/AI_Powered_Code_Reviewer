@@ -190,7 +190,7 @@ AI_Code_Reviewer-main/
 ├── .env.example              ← Template (we created this) ✅
 ├── setup_and_test.sh         ← Automated setup (we created this) ✅
 ├── SETUP_GUIDE.md            ← Detailed guide (we created this) ✅
-├── analyzers/
+├── ai_code_reviewer.analyzers.
 │   └── llm_feedback.py       ← LLM service (we created this) ✅
 └── test_llm_service.py       ← Tests (we created this) ✅
 ```
