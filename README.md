@@ -191,7 +191,71 @@ Press `Ctrl+C` in the terminal where the service is running.
 
 ## Security Scanner - Task 1.5
 
+
 ## Performance Profiler - Task 1.6
+**File location:** `ai_code_reviewer.analyzers.performance_profiler.py`   
+
+### What it does
+**What it does:**  
+The performance profiler runs Python code in an isolated enviornment to measure its performance based on execution. It also checks how long the code takes to execute, how much output is generated, and whether is was completed successfully or timed out.
+
+### How to use the Performance Profiler
+
+#### 1. Start the Style Analyzer Service (do this in VS Code terminal)
+```bash
+python ai_code_reviewer.analyzers.performancePROF.py
+```
+
+#### 2. Test the Service 
+
+**Health Check:**
+```bash
+curl -s http://localhost:5004/health
+```
+
+**Test with fast code:**
+```bash
+curl -s -X POST http://localhost:5004/performance \
+  -H "Content-Type: application/json" \
+  -d '{"code":"print(\"Hello World\")\n","user_id":"demo","submission_id":"demo-1"}'
+```
+
+**Test with slow code:**
+```bash
+curl -s -X POST http://localhost:5004/performance \
+  -H "Content-Type: application/json" \
+  -d '{"code":"import time\ntime.sleep(3)\nprint(\"Done\")\n","user_id":"demo","submission_id":"demo-2"}'
+```
+
+#### 3. Expected Results
+
+**Fast Code example:**
+- Runtime: 0.001-0.01 seconds
+- Success: true
+- Return code: 0
+- Minimal output sizes
+
+**Slow Code example:**
+- Runtime: 2 seconds
+- Success: false
+- RError: "timeout"
+- Execution terminated safely
+
+#### 4. Return Format
+```json
+{
+  "success": true,
+  "ok": true,
+  "runtime_seconds": 0.001234,
+  "return_code": 0,
+  "stdout_size": 12,
+  "stderr_size": 0
+}
+```
+
+#### 5. How to Stop the Service
+Press `Ctrl+C` in the terminal where the service is running.
+
 
 ## LLM Feedback Service - Task 1.7
 
