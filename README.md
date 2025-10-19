@@ -449,6 +449,71 @@ The code has several syntax errors and style violations that need attention.
 [AI provides corrected version]
 ```
 
+##  Project Structure
+
+The following directory tree represents the current layout of the AI-Powered Code Reviewer repository after reorganization and integration testing.  
+This structure highlights where analyzers, scripts, documentation, and tests are located to help contributors navigate the system efficiently.
+```
+ai-code-reviewer/
+├── artifacts/
+│   └── erl_crash.dump
+│
+├── data/
+│   ├── sample_survey_results.csv
+│   └── survey_results.csv
+│
+├── docs/
+│   ├── IMPLEMENTATION_COMPLETE.md
+│   ├── IMPLEMENTATION_REPORT.md
+│   ├── PROJECT_STRUCTURE.md
+│   ├── QUICK_START.md
+│   ├── SETUP_GUIDE.md
+│   ├── TASK_1_7_IMPLEMENTATION.md
+│   └── TASK_1_7_SUMMARY.md
+│
+├── scripts/
+│   ├── analyze_usability.py
+│   ├── setup_and_test.sh
+│   └── start_llm_service.sh
+│
+├── src/
+│   └── ai_code_reviewer/
+│       ├── analyzers/
+│       │   ├── __init__.py
+│       │   ├── llm_feedback.py
+│       │   ├── performancePROF.py
+│       │   ├── security.py
+│       │   ├── staticA.py
+│       │   └── syntax.py
+│       │
+│       ├── logging_service/
+│       │   ├── README.md
+│       │   ├── __init__.py
+│       │   ├── consumer.py
+│       │   ├── database_schema.sql
+│       │   ├── producer.py
+│       │   ├── setup_database.sql
+│       │   ├── simple_queue.py
+│       │   └── test_logging_service.py
+│       │
+│       └── main.py
+│
+├── tests/
+│   ├── test_api.py
+│   ├── test_llm_service.py
+│   ├── test_llm_service.py.bak
+│   ├── test_postgres_connection.py
+│   └── test_postgres_connection.py.bak
+│
+├── web_demo/
+│   └── .gitignore
+│
+├── .gitignore
+├── LICENSE
+├── README.md
+└── requirements.txt
+```
+
 ## Report Aggregator - Task 1.8
 
 ## Storage & Logging - Task 1.9
