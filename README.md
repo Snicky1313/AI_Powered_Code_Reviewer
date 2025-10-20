@@ -668,7 +668,100 @@ ai-code-reviewer/
 └── requirements.txt
 ```
 
-## Report Aggregator - Task 1.8
+## Report Aggregator - Task 1.8 (includes a normalizer function if needed for LLM)
+### Overview
+The Report Aggregator (Task 1.8) is responsible for running all four analysis modules —  
+**Syntax, Security, Style, and Performance** — in sequence and consolidating their outputs  
+into a single structured report. It also integrates the **Normalizer** component,  
+which converts the combined results into a simplified format that can be used for  
+by the LLM feedback module if required.
+
+### Files
+- `src/ai_code_reviewer/aggregator.py` — main orchestration script  
+- `src/ai_code_reviewer/normalizer.py` — helper module to flatten and standardize analyzer output if needed
+- `src/ai_code_reviewer/test_code.py` — sample file used to verify analyzer performance  
+
+### How It Works
+1. The **Aggregator** runs each analyzer in order:
+   - Syntax → Security → Style → Performance  
+2. It compiles all findings into `combined_report.json`.  
+3. The **Normalizer** then converts this into a simplified, uniform structure (`normalized_report.json`)  
+   that the LLM service can easily interpret if necessary. 
+
+### Run Instructions
+From the project root:
+```bash
+cd src/ai_code_reviewer
+python aggregator.py test_code.py
+
+ Starting full analysis for: test_code.py
+→ Running Syntax Analyzer...
+>>> Using PARSO engine
+→ Running Security Analyzer...
+→ Running Style Analyzer...
+→ Running Performance Analyzer...
+ Analysis complete
+
+
+Saving report to: combined_report.json
+*** REPORT saved to combined_report.json ***
+
+*sample output:*
+{
+  "summary": {
+    "total_issues": 7,
+    "syntax_issues": 0,
+    "security_issues": 4,
+    "style_score": 85.0,
+    "performance_runtime_sec": 0.107,
+    "overall_status": "ERRORS FOUND",
+    "grade": "B"
+  }
+}
+
+###Normalizing results for LLM module...
+*** NORMALIZED report saved to normalized_report.json ***  (this standardizes the output for the LLM)
+
+[
+  {
+    "filename": "test_code.py",
+    "category": "security",
+    "line": 5,
+    "severity": "LOW",
+    "message": "Consider possible security implications associated with the subprocess module.",
+    "suggestion": "Avoid using shell=True. Use subprocess.run() with a list of args."
+  },
+  {
+    "filename": "test_code.py",
+    "category": "security",
+    "line": 13,
+    "severity": "HIGH",
+    "message": "Use of weak MD5 hash for security. Consider usedforsecurity=False",
+    "suggestion": "Replace MD5 with SHA-256 or stronger."
+  },
+  {
+    "filename": "test_code.py",
+    "category": "style",
+    "line": 21,
+    "severity": "warning",
+    "code": "E501",
+    "message": "Line too long (111 > 79 characters)",
+    "suggestion": "Break long lines into shorter ones (<= 79 chars)."
+  },
+  {
+    "filename": "test_code.py",
+    "category": "style",
+    "line": 32,
+    "severity": "warning",
+    "code": "W291",
+    "message": "Trailing whitespace",
+    "suggestion": "Remove trailing whitespace."
+  },
+  
+]
+
+###The aggregator generates two output files, the first is the 'combined report' with more detail, runtime, style score and grade. The normalized version is for the LLM, if embedded JSON isn't permitted with the structure of the code. 
+
 
 ## Storage & Logging - Task 1.9
 
