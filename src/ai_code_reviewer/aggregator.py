@@ -74,7 +74,7 @@ def build_summary(results: dict) -> dict:
         "style_score": style_score,
         "performance_runtime_sec": perf_time,
         "overall_status": "PASS" if total_issues == 0 else "ERRORS FOUND",
-        "grade": results["style"]["summary"]["grade"] if "summary" in results["style"] else "N/A"
+        "style grade": results["style"]["summary"]["grade"] if "summary" in results["style"] else "N/A"
     }
 
 
@@ -127,6 +127,6 @@ print(f"""
   Syntax Issues  : {summary.get("syntax_issues")}
   Security Issues: {summary.get("security_issues")}
   Style Score    : {summary.get("style_score")}%
-  Grade          : {summary.get("grade")}
+  Style Grade    : {summary.get("grade")}
 -----------------------------------------------------
 """)
