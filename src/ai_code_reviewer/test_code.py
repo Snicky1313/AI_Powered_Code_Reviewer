@@ -1,5 +1,5 @@
 # test_code.py
-# This file is for testing the AI Code Reviewer aggregator.
+# This file is for testing the AI Code Reviewer aggregator. feel free to change it to see if we can catch all errors. 
 # It intentionally contains syntax, style, security, and performance issues.
 
 import subprocess
@@ -29,7 +29,7 @@ def loop_example():
 
 def syntax_example():
      #Syntax issue: missing parenthesis
-    print("This is a syntax error")   
+    print("This is a syntax error, actually it is not a syntax error because it wouldn't run")   
 
 if __name__ == "__main__":
     greet("Nancy")
