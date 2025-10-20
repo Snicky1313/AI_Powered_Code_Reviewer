@@ -273,20 +273,45 @@ Uses OpenAI's ChatGPT (GPT-3.5-turbo) to generate human-readable, actionable fee
 
 ### Prerequisites
 
-#### 1. OpenAI API Key
-You need an OpenAI API key to use this service:
+#### 1. API Keys (At least one required)
+
+You need at least one AI provider API key. We recommend starting with **Google Gemini** (most cost-effective).
+
+**OpenAI (Most Popular):**
 1. Go to https://platform.openai.com/api-keys
 2. Create a new API key
 3. Set the environment variable:
-
-**On Linux/Mac:**
 ```bash
 export OPENAI_API_KEY='your-api-key-here'
+```
+
+**Anthropic Claude (High Quality):**
+1. Go to https://console.anthropic.com/
+2. Sign up for Claude API access
+3. Set the environment variable:
+```bash
+export ANTHROPIC_API_KEY='your-api-key-here'
+```
+
+**Google Gemini (Most Cost-Effective - Recommended):**
+1. Go to https://makersuite.google.com/app/apikey
+2. Sign in with Google account
+3. Create an API key
+4. Set the environment variable:
+```bash
+export GOOGLE_API_KEY='your-api-key-here'
 ```
 
 **On Windows (PowerShell):**
 ```powershell
 $env:OPENAI_API_KEY='your-api-key-here'
+$env:ANTHROPIC_API_KEY='your-api-key-here'
+$env:GOOGLE_API_KEY='your-api-key-here'
+```
+
+**Set Default Model (Optional):**
+```bash
+export DEFAULT_LLM_MODEL='gemini-pro'  # or gpt-3.5-turbo, claude-3-sonnet, etc.
 ```
 
 ### How to use the LLM Feedback Service
@@ -324,8 +349,34 @@ curl -s -X POST http://localhost:5003/feedback \
   }'
 ```
 
-#### 3. Run Comprehensive Tests
-We've provided a complete test suite:
+#### 3. Explore the Model Catalog
+
+**Demo script (no API keys needed):**
+```bash
+python scripts/demo_models.py
+```
+
+This shows:
+- All 11 available models
+- Cost comparison
+- Provider status
+- Model recommendations
+
+#### 4. Run Comprehensive Tests
+We've provided complete test suites:
+
+**Multi-Model Tests:**
+```bash
+python tests/test_multi_model_llm_service.py
+```
+
+This will run 19 tests:
+- 8 Architecture tests (run without API keys)
+- 11 Provider tests (run with configured API keys)
+
+**Note:** Tests gracefully skip providers that don't have API keys configured.
+
+**Original Tests:**
 ```bash
 python test_llm_service.py
 ```
@@ -338,10 +389,11 @@ This will run 6 tests:
 5. ✓ Feedback for Security Issues
 6. ✓ End-to-End Integration Test
 
-#### 4. Using with API Gateway
+#### 5. Using with API Gateway
 
 The LLM service is automatically integrated with the main API Gateway. When submitting code:
 
+**Using Default Model:**
 ```bash
 curl -X POST http://localhost:8000/submit \
   -H "Content-Type: application/json" \
@@ -354,9 +406,23 @@ curl -X POST http://localhost:8000/submit \
   }'
 ```
 
-The response will include an `llm_feedback` section with AI-generated insights.
+**Specifying a Model:**
+```bash
+curl -X POST http://localhost:8000/submit \
+  -H "Content-Type: application/json" \
+  -d '{
+    "code": "def hello():\n    print(\"Hello World\")\n",
+    "user_id": "user123",
+    "language": "python",
+    "analysis_types": ["syntax"],
+    "include_llm_feedback": true,
+    "llm_model": "gemini-pro"
+  }'
+```
 
-#### 5. Return Format
+The response will include an `llm_feedback` section with AI-generated insights from the selected model.
+
+#### 6. Return Format
 ```json
 {
   "success": true,
@@ -376,46 +442,108 @@ The response will include an `llm_feedback` section with AI-generated insights.
     "issues_by_category": {"syntax": 0, "style": 0},
     "overall_grade": "A"
   },
-  "model_used": "gpt-3.5-turbo",
-  "tokens_used": 450
+  "model_used": "gemini-pro",
+  "provider": "google",
+  "tokens_used": 450,
+  "tokens_breakdown": {
+    "prompt_tokens": 280,
+    "completion_tokens": 170
+  }
 }
 ```
 
-#### 6. Configuration Options
+#### 7. Configuration Options
 
 You can customize the service using environment variables:
 
 ```bash
-# OpenAI API Key (required)
-export OPENAI_API_KEY='your-api-key-here'
+# Provider API Keys (configure at least one)
+export OPENAI_API_KEY='your-openai-key-here'
+export ANTHROPIC_API_KEY='your-anthropic-key-here'
+export GOOGLE_API_KEY='your-google-key-here'
 
-# LLM Service URL (for API Gateway)
+# Default Model Selection (optional)
+export DEFAULT_LLM_MODEL='gemini-pro'  # Default: gpt-3.5-turbo
+
+# Model-Specific Defaults (optional)
+export OPENAI_MODEL='gpt-3.5-turbo'
+export ANTHROPIC_MODEL='claude-3-sonnet'
+export GOOGLE_MODEL='gemini-pro'
+
+# LLM Service Configuration
 export LLM_FEEDBACK_URL='http://localhost:5003/feedback'
-
-# Service Port
 export LLM_FEEDBACK_PORT=5003
+
+# Generation Parameters (optional)
+export DEFAULT_TEMPERATURE=0.7
+export DEFAULT_MAX_TOKENS=1500
 ```
 
-#### 7. How to Stop the Service
+#### 8. How to Stop the Service
 Press `Ctrl+C` in the terminal where the service is running.
+
+### Model Selection Guide
+
+**For Testing/Development:**
+- Use `gemini-pro` or `claude-3-haiku` (cheapest, free tier available)
+
+**For Production (Balanced):**
+- Use `gpt-3.5-turbo` or `claude-3-sonnet` (good quality, reasonable cost)
+
+**For Critical Reviews:**
+- Use `gpt-4` or `claude-3-opus` (best quality, higher cost)
+
+**For Large Files:**
+- Use `gemini-1.5-pro` or `claude-3-sonnet` (large context windows)
+
+### New API Endpoints (Multi-Model)
+
+```bash
+# List all available models
+GET http://localhost:5003/models
+
+# Get recommended models
+GET http://localhost:5003/models/recommended
+
+# Get specific model info
+GET http://localhost:5003/models/gpt-3.5-turbo
+
+# Filter models by provider
+GET http://localhost:5003/models?provider=google
+
+# List only configured models
+GET http://localhost:5003/models?available_only=true
+
+# Test specific model connectivity
+GET http://localhost:5003/test?model=claude-3-sonnet
+```
 
 ### Troubleshooting
 
-**Issue: "OpenAI API key not configured"**
-- Solution: Set the `OPENAI_API_KEY` environment variable
+**Issue: "No API keys configured"**
+- Solution: Configure at least one provider's API key
+- Check status: `curl http://localhost:5003/health`
+
+**Issue: "Model not found"**
+- Solution: List available models: `curl http://localhost:5003/models`
+- Use a valid model name from the list
+
+**Issue: "API key not configured for anthropic"**
+- Solution: Set the required API key for that provider
+- Example: `export ANTHROPIC_API_KEY='your-key'`
 
 **Issue: "API rate limit exceeded"**
-- Solution: Wait a few minutes and try again, or upgrade your OpenAI plan
+- Solution: Wait a few minutes and try again, or try a different model/provider
 
 **Issue: "Service unavailable" when using API Gateway**
 - Solution: Make sure the LLM service is running on port 5003
 
 **Issue: Connection timeout**
-- Solution: Check your internet connection and OpenAI API status
+- Solution: Check your internet connection and the provider's API status
 
 ### What the AI Feedback Includes
 
-The LLM-generated feedback typically contains:
+The LLM-generated feedback (from any model) typically contains:
 
 1. **Overall Assessment**: Brief summary of code quality
 2. **Strengths**: What the code does well
@@ -424,9 +552,11 @@ The LLM-generated feedback typically contains:
 5. **Code Examples**: Improved code snippets (when applicable)
 6. **Learning Points**: Educational insights for improvement
 
+**Note:** Different models may provide varying levels of detail and different perspectives on the same code.
+
 ### Example Output
 
-For code with issues:
+For code with issues (using Claude 3 Sonnet):
 ```
 ## Overall Assessment
 The code has several syntax errors and style violations that need attention.
@@ -447,6 +577,30 @@ The code has several syntax errors and style violations that need attention.
 
 ## Improved Code
 [AI provides corrected version]
+```
+
+### Cost Comparison (10,000 Reviews)
+
+| Model | Total Cost | When to Use |
+|-------|-----------|-------------|
+| gemini-pro | $2.00 | Testing, high volume, budget projects |
+| claude-3-haiku | $2.00 | Fast reviews, simple code |
+| gpt-3.5-turbo | $16.00 | Balanced, most common choice |
+| claude-3-sonnet | $24.00 | High quality, detailed feedback |
+| gpt-4 | $240.00 | Critical code, complex analysis |
+
+**Tip:** Start with `gemini-pro` to save costs, upgrade to premium models for important reviews.
+
+### Advanced: Multi-Model Demo
+
+**Compare feedback from different models:**
+```bash
+# Try the same code with 3 different models
+for model in gpt-3.5-turbo claude-3-sonnet gemini-pro; do
+  echo "Testing with $model..."
+  curl -X POST http://localhost:5003/feedback \
+    -d "{\"code\": \"...\", \"analysis_results\": {...}, \"model\": \"$model\"}"
+done
 ```
 
 ##  Project Structure
