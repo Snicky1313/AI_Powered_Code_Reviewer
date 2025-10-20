@@ -212,3 +212,19 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+# --- AI Code Reviewer specific ignores ---
+# Auto-generated analysis reports
+combined_report.json
+normalized_report.json
+
+# Analyzer artifacts
+artifacts/
+
+# Local Bandit / Flake8 / virtual environments
+bandit_env/
+temp_env/
+venv312/
+
+# Cache folders
+__pycache__/
+*.pyc
