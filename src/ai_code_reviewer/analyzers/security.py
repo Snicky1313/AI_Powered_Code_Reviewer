@@ -4,10 +4,44 @@
 # Returns structured findings in the same format as syntax analyzer.
 # Can be run standalone for a quick demo. The demo is full detail output for testing and debugging. 
 
+'''### Security Analyzer Environment (Bandit)
+Bandit currently has limited support for Python 3.14+.
+To ensure consistent results, the AI Code Reviewer project uses a Python 3.12 virtual environment for the Security Analyzer:
+
+```bash
+# 1. Create a Python 3.12 environment
+py -3.12 -m venv venv312
+
+# 2. Activate it
+venv312\Scripts\activate
+
+# 3. Install Bandit
+pip install bandit==1.7.10
+
+# 4. Run the full analysis
+python src/ai_code_reviewer/aggregator.py src/ai_code_reviewer/test_code.py
+'''
+
+
+# --- Temporary compatibility patch for Python 3.14+ (AST changes) 
+# # Bandit uses ast.Num/Str which were removed in Python 3.14.
+# This patch adds them back as aliases of ast.Constant for compatibility.---
+
+import ast
+if not hasattr(ast, "Num"):
+    ast.Num = ast.Constant
+    ast.Str = ast.Constant
+    ast.Bytes = ast.Constant
+    ast.NameConstant = ast.Constant
+    ast.Ellipsis = type(Ellipsis)  # ✅ Fix for Python 3.14 Bandit crash
+
+# --------------------------------------------------------------------
+
 import json
 import subprocess
 import tempfile
 from typing import Dict, Any
+
 
 # ---------- helpers ----------
 
@@ -80,35 +114,49 @@ def _suggest_fix(rule_id: str, message: str, snippet: str) -> str:
 
 def check_python_security(source: str, filename: str = "<string>") -> Dict[str, Any]:
     """
-    Analyze Python code with Bandit and return structured findings.
-    Compatible with aggregator and demo runner.
+    Analyze Python code for security issues using Bandit.
+    Runs Bandit via subprocess inside the local 'bandit_env' virtual environment
+    and returns structured findings compatible with the aggregator.
     """
+    import os
+    import json
+    import subprocess
+    import tempfile
+
     report: Dict[str, Any] = {
         "ok": True,
         "findings": [],
         "filename": filename
     }
 
-    # write source code to a temp file for Bandit to scan
+    # Write the code to a temporary file
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as tmp:
         tmp.write(source)
         tmp_filename = tmp.name
 
     try:
-        # run Bandit and capture JSON output
+        # Path to Bandit executable inside your virtual environment
+        bandit_exe = os.path.join("bandit_env", "Scripts", "bandit.exe")
+
+        # Ensure Bandit exists
+        if not os.path.exists(bandit_exe):
+            raise FileNotFoundError(
+                "Bandit executable not found. Make sure you ran: "
+                "'py -3.12 -m venv bandit_env' and 'pip install bandit==1.7.10'"
+            )
+
+        # Run Bandit on the temporary file
         result = subprocess.run(
-            ["python","-m","bandit", "-f", "json", "-q", tmp_filename],
+            [bandit_exe, "-f", "json", "-q", tmp_filename],
             capture_output=True,
             text=True,
             check=False
         )
 
-        bandit_output = result.stdout.strip()
-        if not bandit_output:
-            return report  # no output from Bandit = no findings
+        if not result.stdout.strip():
+            return report  # no findings
 
-        data = json.loads(bandit_output)
-
+        data = json.loads(result.stdout)
         for issue in data.get("results", []):
             report["ok"] = False
             line = issue.get("line_number", 1)
@@ -120,9 +168,7 @@ def check_python_security(source: str, filename: str = "<string>") -> Dict[str, 
             report["findings"].append({
                 "message": message,
                 "severity": severity,
-                "location": {
-                    "start": {"line": line, "col": 1}
-                },
+                "location": {"start": {"line": line, "col": 1}},
                 "suggestion": _suggest_fix(rule_id, message, snippet)
             })
 
@@ -132,10 +178,17 @@ def check_python_security(source: str, filename: str = "<string>") -> Dict[str, 
             "message": f"Security analyzer failed: {e}",
             "severity": "HIGH",
             "location": {"start": {"line": 1, "col": 1}},
-            "suggestion": "Check Bandit installation and rerun."
+            "suggestion": "Check Bandit installation or path and rerun."
         })
 
+    finally:
+        try:
+            os.unlink(tmp_filename)
+        except OSError:
+            pass
+
     return report
+
 
 # ---------- run directly ----------
 
