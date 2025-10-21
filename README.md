@@ -93,24 +93,80 @@ python testForAPI.py
 
 ## Syntax Analyzer - Task 1.3
 
-## Python Syntax Analyzer (AST)
+### Python Syntax Analyzer (Uses Parso if available)
 
-**File:** `ai_code_reviewer.analyzers.syntax.py`  
-**Function:** `check_python_syntax(code: str) -> dict`
+### Overview
+The **Syntax Analyzer** validates Python code to detect and report syntax errors before execution.  
+It first attempts to parse the code using **Parso** (a fast, tolerant Python parser).  
+If Parso is not available or fails, it automatically falls back to **Python’s built-in AST parser**, ensuring consistent results.  
 
-**What it does:**  
-Parses Python code using the standard library `ast` to catch **syntax errors** before runtime.
+This module returns a **structured JSON report** compatible with the **Aggregator (Task 1.8)** and **Normalizer** modules.  
 
-**Return format:**
+### File Location
+`src/ai_code_reviewer/analyzers/syntax.py`
+
+### How It Works
+**Engine Selection**
+- Prefers Parso if installed.  
+- Falls back to AST if Parso import fails.  
+
+**Parsing Process**
+- Attempts to parse the given Python source code.  
+- Collects line and column numbers for any syntax errors.  
+- Returns all findings in a consistent JSON-style format.  
+
+**Self-Test Mode**
+- The file can be executed directly to test syntax checking on any Python file.  
+
+### Run Instructions
+From the project root:
+```bash
+cd src/ai_code_reviewer
+python analyzers/syntax.py test_code.py
+```
+
+Or, as part of the full analysis pipeline:
+```bash
+python aggregator.py test_code.py
+```
+
+### Example Input
+```python
+def greet(name)
+    print("Hello", name)
+```
+
+### Example Output
 ```json
 {
-  "ok": true,                    // true if no syntax errors
-  "errors": [                    // list of errors (empty if ok=true)
-    { "line": 3, "column": 11, "message": "invalid syntax" }
-  ]
+  "ok": false,
+  "findings": [
+    {
+      "line": 1,
+      "column": 13,
+      "message": "Missing colon (':') after function definition."
+    }
+  ],
+  "filename": "test_code.py"
 }
-**No extra packages needed as AST is built into Python**
 ```
+
+ **If no errors are found:**
+```json
+{
+  "ok": true,
+  "findings": [],
+  "filename": "good_code.py"
+}
+```
+
+### Key Features
+- **Dual-Engine Support:** Uses Parso for speed and flexibility, AST for reliability.  
+- **Detailed Error Reporting:** Includes line, column, and full error message.  
+- **Crash-Safe:** Handles parsing exceptions gracefully.  
+- **Ready for Integration:** Output format matches Aggregator and Normalizer requirements.  
+- **Self-Contained Testing:** Run `python syntax.py test_code.py` to verify independently.  
+
 
 
 ## Static Analyzer - Task 1.4
@@ -189,7 +245,99 @@ curl -s -X POST http://localhost:5002/style \
 #### 5. How to Stop the Service
 Press `Ctrl+C` in the terminal where the service is running.
 
-## Security Scanner - Task 1.5
+## Security Analyzer - Task 1.5
+
+### File Location
+src/ai_code_reviewer/analyzers/security.py
+
+### Overview
+The Security Analyzer scans Python source code for potential vulnerabilities and unsafe practices. It uses Bandit (an open-source security analysis tool from PyCQA) to detect issues such as:
+- Use of insecure functions or modules
+- Hardcoded credentials
+- Weak cryptographic algorithms
+- Unsafe subprocess calls
+
+If Bandit is not installed or unavailable, the analyzer gracefully notifies the user to install it and continues without crashing, ensuring compatibility in any environment.
+
+The analyzer returns a structured JSON report compatible with the Aggregator and Normalizer modules.
+
+### How It Works
+1. The analyzer reads the Python source code.
+2. It attempts to run Bandit as a subprocess to scan the file or input string.
+3. Bandit performs static code analysis using a set of predefined security rules.
+4. The results are parsed and summarized into a consistent JSON structure.
+5. If Bandit cannot be executed, a fallback message is included in the output.
+
+### Run Instructions
+From the project root:
+cd src/ai_code_reviewer
+python analyzers/security.py test_code.py
+
+If Bandit is not yet installed, create a virtual environment and install it:
+py -3.12 -m venv bandit_env
+bandit_env\Scripts\activate
+pip install bandit==1.7.10
+
+### Example Input
+import hashlib
+import subprocess
+
+def insecure_hash(data):
+    return hashlib.md5(data.encode()).hexdigest()
+
+def run_ls():
+    subprocess.call("ls", shell=True)
+
+### Example Output
+{
+  "ok": false,
+  "findings": [
+    {
+      "message": "Use of weak MD5 hash for security.",
+      "severity": "HIGH",
+      "location": { "start": { "line": 4, "col": 5 } },
+      "suggestion": "Replace MD5 with SHA-256 or stronger."
+    },
+    {
+      "message": "Possible command injection via subprocess with shell=True.",
+      "severity": "MEDIUM",
+      "location": { "start": { "line": 7, "col": 5 } },
+      "suggestion": "Use subprocess.run() with a list of arguments instead."
+    }
+  ],
+  "filename": "test_code.py"
+}
+
+If Bandit is not installed:
+{
+  "ok": false,
+  "findings": [
+    {
+      "message": "Security analyzer failed: Bandit executable not found. Make sure you ran: 'py -3.12 -m venv bandit_env' and 'pip install bandit==1.7.10'",
+      "severity": "HIGH"
+    }
+  ],
+  "filename": "test_code.py"
+}
+
+### Key Features
+- Bandit Integration: for deep static security analysis.
+- Multi-Issue Detection: Detects weak hashes, unsafe subprocess calls, and more.
+- Fail-Safe Execution: Gracefully handles missing dependencies or failed scans.
+- Structured Output: Compatible with the Aggregator and Normalizer modules.
+- Configurable Environment: Easily switch Bandit versions or rulesets.
+- Cross-Platform Ready: Works on both Windows and macOS.
+
+### Self-Test Mode
+The Security Analyzer can be executed directly to test its functionality.
+Example command:
+python analyzers/security.py test_code.py
+This will generate a JSON report (security_report.json) summarizing the detected security issues.
+
+### Notes
+- Requires Python 3.12 or higher.
+- Recommended Bandit version: 1.7.10
+- Output integrates with the Report Aggregator (Task 1.8).
 
 
 ## Performance Profiler - Task 1.6
@@ -669,16 +817,17 @@ ai-code-reviewer/
 ```
 
 ## Report Aggregator - Task 1.8 (includes a normalizer function if needed for LLM)
+
 ### Overview
-The Report Aggregator (Task 1.8) is responsible for running all four analysis modules —  
+The **Report Aggregator (Task 1.8)** is responsible for running all four analysis modules —  
 **Syntax, Security, Style, and Performance** — in sequence and consolidating their outputs  
 into a single structured report. It also integrates the **Normalizer** component,  
-which converts the combined results into a simplified format that can be used for  
+which converts the combined results into a simplified format that can be used  
 by the LLM feedback module if required.
 
 ### Files
 - `src/ai_code_reviewer/aggregator.py` — main orchestration script  
-- `src/ai_code_reviewer/normalizer.py` — helper module to flatten and standardize analyzer output if needed
+- `src/ai_code_reviewer/normalizer.py` — helper module to flatten and standardize analyzer output if needed  
 - `src/ai_code_reviewer/test_code.py` — sample file used to verify analyzer performance  
 
 ### How It Works
@@ -686,14 +835,17 @@ by the LLM feedback module if required.
    - Syntax → Security → Style → Performance  
 2. It compiles all findings into `combined_report.json`.  
 3. The **Normalizer** then converts this into a simplified, uniform structure (`normalized_report.json`)  
-   that the LLM service can easily interpret if necessary. 
+   that the LLM service can easily interpret if necessary.  
 
 ### Run Instructions
 From the project root:
 ```bash
 cd src/ai_code_reviewer
 python aggregator.py test_code.py
+```
 
+**Expected Console Output:**
+```
 Results:
  Starting full analysis for: test_code.py
 → Running Syntax Analyzer...
@@ -703,11 +855,12 @@ Results:
 → Running Performance Analyzer...
  Analysis complete
 
-
 Saving report to: combined_report.json
 *** REPORT saved to combined_report.json ***
+```
 
-*sample output:*
+**Sample Output (combined_report.json):**
+```json
 {
   "summary": {
     "total_issues": 7,
@@ -719,10 +872,16 @@ Saving report to: combined_report.json
     "grade": "B"
   }
 }
+```
 
-###Normalizing results for LLM module...
-*** NORMALIZED report saved to normalized_report.json ***  (this standardizes the output for the LLM)
+**Normalization Step:**
+```
+Normalizing results for LLM module...
+*** NORMALIZED report saved to normalized_report.json ***
+```
 
+**Sample Output (normalized_report.json):**
+```json
 [
   {
     "filename": "test_code.py",
@@ -757,13 +916,29 @@ Saving report to: combined_report.json
     "code": "W291",
     "message": "Trailing whitespace",
     "suggestion": "Remove trailing whitespace."
-  },
-  
+  }
 ]
+```
 
-###The aggregator generates two output files, the first is the 'combined report' with more detail, runtime, style score and grade. The normalized version is for the LLM, if embedded JSON isn't permitted with the structure of the code. 
+### Output Explanation
+The **Aggregator** produces two output files:
+1. **combined_report.json** — detailed output with runtime, grades, and analyzer summaries.  
+2. **normalized_report.json** — simplified flattened results for the LLM feedback system,  
+   useful when embedded JSON or nested structures are not supported.
 
+### Key Features
+- **Full Analysis Pipeline:** Integrates Syntax, Security, Style, and Performance analyzers sequentially.  
+- **Centralized Reporting:** Combines all findings into a unified JSON structure.  
+- **Normalizer Integration:** Automatically generates a second simplified report for LLMs.  
+- **Status and Grading:** Provides summary fields such as total issues, performance time, and grade.  
+- **Error Handling:** Safely manages missing analyzers or exceptions without crashing.  
+- **Ready for Integration:** Works with downstream LLM and Feedback modules (Task 1.7).  
 
-## Storage & Logging - Task 1.9
+```
+
+**## Storage & Logging Task 1.9**
+
+```
+
 
 
