@@ -143,7 +143,7 @@ async def submit_code(submission: CodeSubmission):
         
         submissions[submission_id] = submission_data
         
-        # Save to persistent storage
+        # Saves submission to storage
         save_submission(submission_id, submission_data)
         
         logger.info(f"Analysis completed for submission {submission_id}")
