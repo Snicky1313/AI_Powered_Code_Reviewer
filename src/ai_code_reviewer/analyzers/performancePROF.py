@@ -1,3 +1,11 @@
+# ===============================
+# performancePROF.py
+# AI-Powered Code Reviewer: Performance Analyzer
+# ===============================
+# This analyzer executes user code in a controlled environment to measure
+# runtime performance and detect timeouts or excessive output from submitted code.
+# ===============================
+
 import time
 import tempfile
 import os
