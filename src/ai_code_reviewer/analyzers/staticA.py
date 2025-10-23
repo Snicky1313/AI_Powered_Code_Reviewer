@@ -1,3 +1,12 @@
+# ===============================
+# staticA.py
+# AI-Powered Code Reviewer: Style Analyzer
+# ===============================
+# This analyzer checks Python code for style violations.
+# It uses flake8 and other static rules (Rule examples: line length, whitespace, tabs).
+# It also assigns a score and letter grade to indicate overall code quality.
+# ===============================
+
 import subprocess
 import tempfile
 import json
