@@ -1,3 +1,12 @@
+# ===============================
+# main.py
+# AI-Powered Code Reviewer: API Gateway
+# ===============================
+# This module defines a FastAPI-based REST API for handling code submissions.
+# It integrates syntax, style, and AI-based feedback analyzers, returning
+# analysis results and reports for each submission the user gives.
+# ===============================
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
