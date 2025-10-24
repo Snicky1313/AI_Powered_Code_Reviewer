@@ -6,7 +6,7 @@ AI Code Reviewer – Aggregator
 Sequentially runs Syntax, Security, Style, and Performance analyzers.
 Combines all findings into a unified JSON report for downstream use.
 """
-
+import requests
 import json
 import pathlib
 import sys, os
@@ -104,6 +104,33 @@ if __name__ == "__main__":
     source = file_path.read_text(encoding="utf-8")
     full_report = run_all_analyzers(source, filename=file_path.name)
     save_report(full_report)
+
+        # ---------- SEND TO LLM_FEEDBACK.PY ----------
+        # ---------- Send Report to LLM Feedback Service ----------
+    try:
+        print("\nSending report to LLM Feedback Service...")
+        llm_response = requests.post(
+            "http://localhost:5003/feedback",  # LLM service endpoint
+            json={"code": source, "analysis_results": full_report},
+            timeout=120
+        )
+        llm_result = llm_response.json()
+
+        # Save the GPT-enhanced feedback
+        with open("final_feedback.json", "w", encoding="utf-8") as f:
+            json.dump(llm_result, f, indent=4)
+        print("*** LLM feedback received and saved to final_feedback.json ***")
+
+        # Display summary text in console
+        print("\n" + "=" * 60)
+        print(" AI-GENERATED FEEDBACK SUMMARY")
+        print("=" * 60)
+        print(llm_result.get("feedback", "(No feedback received)"))
+        print("=" * 60 + "\n")
+
+    except Exception as e:
+        print(f"Failed to get LLM feedback: {e}")
+
 
 # ---------- Normalize Results (If the LLM requires normalized results and can't read embedded JSON) ----------
 try:
