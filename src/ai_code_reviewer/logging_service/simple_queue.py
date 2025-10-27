@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
 """
-Simple in-memory queue system
-This allows testing the logging service without external dependencies
+Simple in-memory queue system - DEPRECATED
+This file is kept for backward compatibility with the fallback mechanism.
+
+The service now uses Redis for persistent storage (see redis_queue.py).
+This simple queue is only used as a fallback when Redis is unavailable.
+
+DO NOT USE THIS IN PRODUCTION - Use Redis instead!
 """
 
 import json
 import queue
 import threading
 import time
-from typing import Dict, Any, Callable
 import logging
+from typing import Dict, Any, Callable
 
 logger = logging.getLogger(__name__)
 
 class SimpleQueue:
     """
-    Simple in-memory queue that mimics basic RabbitMQ functionality
+    Simple in-memory queue that mimics basic RabbitMQ functionality.
+    DEPRECATED: Use Redis for production deployments.
     """
     
     def __init__(self):
@@ -27,8 +33,8 @@ class SimpleQueue:
         """Declare a queue (create if it doesn't exist)"""
         if queue_name not in self.queues:
             self.queues[queue_name] = queue.Queue()
-            logger.info(f"Queue '{queue_name}' declared")
-    
+            logger.warning(f"Using in-memory queue for '{queue_name}' - NOT PERSISTENT!")
+            
     def publish(self, queue_name: str, message: Dict[str, Any]) -> bool:
         """Publish a message to a queue"""
         try:
@@ -38,22 +44,22 @@ class SimpleQueue:
             # Serialize message
             message_str = json.dumps(message, default=str)
             self.queues[queue_name].put(message_str)
-            logger.info(f"Message published to queue '{queue_name}'")
+            logger.info(f"Message published to in-memory queue '{queue_name}'")
             return True
             
         except Exception as e:
             logger.error(f"Failed to publish message: {e}")
             return False
     
-    def consume(self, queue_name: str, callback: Callable[[str], None]):
-        """Start consuming messages from a queue"""
+    def consume(self, queue_name: str, callback: Callable[[str], None], block_timeout: int = 1):
+        """Start consuming messages from the queue"""
         def consumer_thread():
-            logger.info(f"Started consuming from queue '{queue_name}'")
+            logger.warning(f"Consuming from in-memory queue '{queue_name}' - NOT PERSISTENT!")
             
             while self.running:
                 try:
                     # Get message with timeout to allow graceful shutdown
-                    message = self.queues[queue_name].get(timeout=1)
+                    message = self.queues[queue_name].get(timeout=block_timeout)
                     
                     # Process message
                     callback(message)
@@ -96,7 +102,9 @@ class SimpleQueue:
         return {
             "exists": True,
             "message_count": self.queues[queue_name].qsize(),
-            "consumers": 1 if queue_name in self.consumers else 0
+            "consumers": 1 if queue_name in self.consumers else 0,
+            "type": "in-memory",
+            "warning": "NOT PERSISTENT - Data will be lost on restart!"
         }
 
 # Global queue instance
@@ -105,3 +113,4 @@ simple_queue = SimpleQueue()
 def get_queue():
     """Get the global queue instance"""
     return simple_queue
+

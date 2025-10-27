@@ -6,22 +6,44 @@ This FastAPI application serves as the producer in the asynchronous logging syst
 It accepts log events via HTTP POST requests and publishes them to a simple in-memory queue
 for processing by the consumer service. No RabbitMQ required!
 
-Author: AI Code Reviewer Team
+Author: Sagor Ahmmed
 Created: 2025-09-28
 """
 
 import json
 import logging
 import os
+import time
 from datetime import datetime
 from typing import Dict, Any, Optional
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from dotenv import load_dotenv
-from simple_queue import get_queue
+try:
+    from redis_queue import get_queue
+except ImportError:
+    from simple_queue import get_queue
+try:
+    from auth import require_api_key, rate_limit
+    from metrics import (
+        increment_log_event, increment_api_request, record_request_duration,
+        set_queue_size, get_metrics, service_info
+    )
+except ImportError:
+    # Fallback if auth/metrics not available
+    def require_api_key(func): return func
+    def rate_limit(*args, **kwargs):
+        def decorator(func): return func
+        return decorator
+    def increment_log_event(*args, **kwargs): pass
+    def increment_api_request(*args, **kwargs): pass
+    def record_request_duration(*args, **kwargs): pass
+    def set_queue_size(*args, **kwargs): pass
+    def get_metrics(): return b""
+    service_info = None
 
 # Load environment variables
 load_dotenv()
@@ -177,8 +199,41 @@ async def startup_event():
     try:
         queue_manager.connect()
         logger.info("Producer service started successfully")
+        
+        # Initialize metrics
+        if service_info:
+            service_info.info({
+                'version': '2.0.0',
+                'name': 'logging_producer',
+                'environment': os.getenv('ENVIRONMENT', 'development')
+            })
     except Exception as e:
         logger.error(f"Failed to initialize producer service: {str(e)}")
+
+@app.middleware("http")
+async def track_metrics(request: Request, call_next):
+    """Middleware to track request metrics."""
+    start_time = time.time()
+    
+    response = await call_next(request)
+    
+    duration = time.time() - start_time
+    
+    # Track API request
+    increment_api_request(
+        method=request.method,
+        endpoint=request.url.path,
+        status_code=response.status_code
+    )
+    
+    # Track request duration
+    record_request_duration(
+        method=request.method,
+        endpoint=request.url.path,
+        duration=duration
+    )
+    
+    return response
 
 
 @app.on_event("shutdown")
@@ -234,8 +289,15 @@ async def health_check():
         )
 
 
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint."""
+    return Response(content=get_metrics(), media_type="text/plain")
+
 @app.post("/log", response_model=LogResponse, status_code=202)
-async def log_event(log_event: LogEvent):
+@require_api_key
+@rate_limit(requests=1000, window=60)  # 1000 requests per minute
+async def log_event(log_event: LogEvent, request: Request):
     """
     Accept and queue log events for processing.
     
@@ -266,6 +328,13 @@ async def log_event(log_event: LogEvent):
                 status_code=503,
                 detail="Failed to queue log event. Service temporarily unavailable."
             )
+        
+        # Track metrics
+        increment_log_event(log_event.event_type, 'success')
+        
+        # Update queue size metric
+        queue_info = queue_manager.get_queue_info()
+        set_queue_size(queue_manager.queue_name, queue_info.get('message_count', 0))
         
         # Log the successful submission
         logger.info(
@@ -324,7 +393,7 @@ if __name__ == "__main__":
     logger.info(f"Starting producer service on {host}:{port}")
     
     uvicorn.run(
-        "producer_simple:app",
+        "producer:app",
         host=host,
         port=port,
         reload=os.getenv('ENVIRONMENT') == 'development',

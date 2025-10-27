@@ -21,7 +21,10 @@ from typing import Dict, Any, Optional
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
-from simple_queue import get_queue
+try:
+    from redis_queue import get_queue
+except ImportError:
+    from simple_queue import get_queue
 
 # Load environment variables
 load_dotenv()
@@ -98,6 +101,48 @@ class DatabaseManager:
                 pass
             self.connect()
     
+    def ensure_review_session(self, session_id: int) -> bool:
+        """
+        Ensure a review session exists in the database. Create it if it doesn't.
+        
+        Args:
+            session_id: Review session ID
+            
+        Returns:
+            bool: True if session exists or was created successfully
+        """
+        try:
+            self.ensure_connection()
+            
+            with self.connection.cursor() as cursor:
+                # Check if session exists
+                cursor.execute("SELECT id FROM review_sessions WHERE id = %s", (session_id,))
+                exists = cursor.fetchone()
+                
+                if not exists:
+                    # Create the session with default values
+                    insert_query = """
+                        INSERT INTO review_sessions (id, user_id, start_time)
+                        VALUES (%s, %s, %s)
+                    """
+                    cursor.execute(insert_query, (
+                        session_id,
+                        int(os.getenv('DEFAULT_USER_ID', 1)),
+                        datetime.now()
+                    ))
+                    self.connection.commit()
+                    logger.info(f"Created review session: {session_id}")
+                
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error ensuring review session: {str(e)}")
+            try:
+                self.connection.rollback()
+            except:
+                pass
+            return False
+    
     def insert_log_event(self, session_id: int, event_type: str, payload: Dict[str, Any], 
                         timestamp: str = None) -> bool:
         """
@@ -114,6 +159,10 @@ class DatabaseManager:
         """
         try:
             self.ensure_connection()
+            
+            # Ensure review session exists
+            if not self.ensure_review_session(session_id):
+                logger.warning(f"Failed to ensure review session {session_id}, attempting insert anyway")
             
             # Parse timestamp
             if timestamp:

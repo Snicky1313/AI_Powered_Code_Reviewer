@@ -15,9 +15,36 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from analyzers.syntax import check_python_syntax
 from analyzers.security import check_python_security
 from analyzers.staticA import StyleAnalyzer
-from analyzers.performancePROF import PerformanceAnalyzer
 
-# ---------- MAIN AGGREGATOR ----------
+# Performance analyzer is optional
+try:
+    from analyzers.performancePROF import PerformanceAnalyzer
+    PERFORMANCE_AVAILABLE = True
+except ImportError:
+    PERFORMANCE_AVAILABLE = False
+    PerformanceAnalyzer = None
+
+# ---------- AGGREGATOR CLASS (for FastAPI integration) ----------
+
+class Aggregator:
+    """
+    Aggregator class for collecting analysis results.
+    Used by FastAPI main.py for collecting results from multiple analyzers.
+    """
+    
+    def __init__(self):
+        self.results = {}
+    
+    def add_result(self, analysis_type: str, result: dict):
+        """Add a result from an analyzer."""
+        self.results[analysis_type] = result
+    
+    def get_aggregated_results(self) -> dict:
+        """Get all collected results."""
+        return self.results
+
+
+# ---------- MAIN AGGREGATOR (standalone functions) ----------
 
 def run_all_analyzers(source_code: str, filename: str = "<string>") -> dict:
     """
@@ -45,12 +72,15 @@ def run_all_analyzers(source_code: str, filename: str = "<string>") -> dict:
     style_report["filename"] = filename
     results["style"] = style_report
 
-    #  Performance Analyzer
-    print("→ Running Performance Analyzer...")
-    perf_analyzer = PerformanceAnalyzer()
-    perf_report = perf_analyzer.analyze(source_code)
-    perf_report["filename"] = filename
-    results["performance"] = perf_report
+    #  Performance Analyzer (if available)
+    if PERFORMANCE_AVAILABLE:
+        print("→ Running Performance Analyzer...")
+        perf_analyzer = PerformanceAnalyzer()
+        perf_report = perf_analyzer.analyze(source_code)
+        perf_report["filename"] = filename
+        results["performance"] = perf_report
+    else:
+        results["performance"] = {"ok": True, "message": "Performance analyzer not available"}
 
     # ---------- SUMMARY ----------
     results["summary"] = build_summary(results)
@@ -76,6 +106,47 @@ def build_summary(results: dict) -> dict:
         "overall_status": "PASS" if total_issues == 0 else "ERRORS FOUND",
         "style grade": results["style"]["summary"]["grade"] if "summary" in results["style"] else "N/A"
     }
+
+
+def generate_report(results: dict, submission_id: str) -> str:
+    """
+    Generate a human-readable report from aggregated results.
+    
+    Args:
+        results: Dictionary containing analysis results
+        submission_id: ID of the submission
+        
+    Returns:
+        Formatted report string
+    """
+    report_lines = []
+    report_lines.append(f"Code Review Report - Submission ID: {submission_id}")
+    report_lines.append("=" * 80)
+    
+    for analysis_type, result in results.items():
+        if isinstance(result, dict):
+            report_lines.append(f"\n{analysis_type.upper()} Analysis:")
+            report_lines.append("-" * 80)
+            
+            # Add relevant fields from the result
+            if 'findings' in result:
+                findings = result['findings']
+                report_lines.append(f"Findings: {len(findings)}")
+                for finding in findings[:5]:  # Show first 5 findings
+                    if isinstance(finding, dict):
+                        report_lines.append(f"  - {finding.get('message', 'N/A')} at line {finding.get('location', {}).get('start', {}).get('line', '?')}")
+            
+            if 'style_score' in result:
+                report_lines.append(f"Style Score: {result['style_score']}")
+            
+            if 'summary' in result:
+                summary = result['summary']
+                if isinstance(summary, str):
+                    report_lines.append(f"Summary: {summary}")
+                elif isinstance(summary, dict):
+                    report_lines.append(f"Summary: {summary}")
+    
+    return "\n".join(report_lines)
 
 
 def save_report(report: dict, output_path: str = "combined_report.json"):
@@ -131,21 +202,20 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Failed to get LLM feedback: {e}")
 
+    # ---------- Normalize Results (If the LLM requires normalized results and can't read embedded JSON) ----------
+    try:
+        from normalizer import normalize_report
+        print("\nNormalizing results for LLM module...")
+        normalized = normalize_report(full_report)
+        with open("normalized_report.json", "w", encoding="utf-8") as f:
+            json.dump(normalized, f, indent=4)
+        print("*** NORMALIZED report saved to normalized_report.json *** \n\n\n")
+    except Exception as e:
+        print(f"*** Normalization failed: {e}***")
 
-# ---------- Normalize Results (If the LLM requires normalized results and can't read embedded JSON) ----------
-try:
-    from normalizer import normalize_report
-    print("\nNormalizing results for LLM module...")
-    normalized = normalize_report(full_report)
-    with open("normalized_report.json", "w", encoding="utf-8") as f:
-        json.dump(normalized, f, indent=4)
-    print("*** NORMALIZED report saved to normalized_report.json *** \n\n\n")
-except Exception as e:
-    print(f"*** Normalization failed: {e}***")
-
-# SUMMARY WITHOUT GOING TO COMBINED REPORT
-summary = full_report.get("summary", {})
-print(f"""
+    # SUMMARY WITHOUT GOING TO COMBINED REPORT
+    summary = full_report.get("summary", {})
+    print(f"""
 -----------------------------------------------------
   FINAL STATUS REPORT SUMMARY (see output files for details)
 -----------------------------------------------------

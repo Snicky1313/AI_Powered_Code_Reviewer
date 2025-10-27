@@ -6,7 +6,7 @@
 CREATE DATABASE code_reviewer_logs;
 
 -- Create the user with password
-CREATE USER logging_service_user WITH PASSWORD 'SagorAhmmed22';
+CREATE USER logging_service_user WITH PASSWORD 'AhmmedSagor22';
 
 -- Grant privileges on the database
 GRANT ALL PRIVILEGES ON DATABASE code_reviewer_logs TO logging_service_user;

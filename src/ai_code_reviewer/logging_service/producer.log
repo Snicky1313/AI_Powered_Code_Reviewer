@@ -1,0 +1,24 @@
+nohup: ignoring input
+2025-10-27 07:16:12,752 - redis_queue - INFO - Successfully connected to Redis at localhost:6379
+/home/yogo/AI_Code_Reviewer-main/logging_service/producer.py:196: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+/home/yogo/AI_Code_Reviewer-main/logging_service/producer.py:239: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("shutdown")
+2025-10-27 07:16:12,760 - __main__ - INFO - Starting producer service on 0.0.0.0:8001
+INFO:     Will watch for changes in these directories: ['/home/yogo/AI_Code_Reviewer-main/logging_service']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [26438] using WatchFiles
+2025-10-27 07:16:15,408 - redis_queue - INFO - Successfully connected to Redis at localhost:6379
+2025-10-27 07:16:15,529 - watchfiles.main - INFO - 1 change detected
+ERROR:    Error loading ASGI app. Could not import module "producer_simple".
+INFO:     Stopping reloader process [26438]

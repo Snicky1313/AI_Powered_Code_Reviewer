@@ -16,10 +16,10 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import os
 import requests
-from ai_code_reviewer.analyzers.aggregator import Aggregator
-from ai_code_reviewer.analyzers.report_aggregator import generate_report
-from ai_code_reviewer.analyzers.syntax import check_python_syntax_all
+from ai_code_reviewer.aggregator import Aggregator, generate_report
+from ai_code_reviewer.analyzers.syntax import check_python_syntax as check_python_syntax_all
 from storage import save_submission, load_submission
+from ai_code_reviewer.logging_helper import log_event, log_review_started, log_review_completed, log_analysis_started, log_analysis_completed, log_llm_query, log_llm_feedback_received
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -80,37 +80,58 @@ async def health_check():
 async def submit_code(submission: CodeSubmission):
     """Submit code for analysis"""
     try:
-        # Generate unique submission ID
+        # Generate unique submission ID and session ID
         submission_id = str(uuid.uuid4())
+        session_id = hash(submission_id) % 2147483647  # Convert to positive int for logging
         
         logger.info(f"Received submission {submission_id} from user {submission.user_id}")
+        
+        # Log review started event
+        log_review_started(
+            session_id=session_id,
+            user_id=submission.user_id,
+            language=submission.language,
+            code_length=len(submission.code)
+        )
         
         # Initialize aggregator for analysis results
         aggregator = Aggregator()
         analysis_results = {}
+        analysis_count = 0
         
         # Run syntax analysis if requested
         if "syntax" in submission.analysis_types and submission.language.lower() == "python":
             logger.info(f"Running syntax analysis for submission {submission_id}")
+            log_analysis_started(session_id=session_id, analysis_type='syntax')
+            
             syntax_result = check_python_syntax_all(submission.code, filename=f"submission_{submission_id}.py")
             aggregator.add_result("syntax", syntax_result)
             analysis_results["syntax"] = syntax_result
+            analysis_count += 1
+            
+            log_analysis_completed(session_id=session_id, analysis_type='syntax', results=syntax_result)
         
         # Run style analysis if requested (using the staticA.py analyzer)
         if "style" in submission.analysis_types and submission.language.lower() == "python":
             logger.info(f"Running style analysis for submission {submission_id}")
             try:
+                log_analysis_started(session_id=session_id, analysis_type='style')
+                
                 from staticA import StyleAnalyzer
                 style_analyzer = StyleAnalyzer()
                 style_result = style_analyzer.analyze(submission.code)
                 aggregator.add_result("style", style_result)
                 analysis_results["style"] = style_result
+                analysis_count += 1
+                
+                log_analysis_completed(session_id=session_id, analysis_type='style', results=style_result)
             except Exception as e:
                 logger.error(f"Style analysis failed: {str(e)}")
                 analysis_results["style"] = {
                     "success": False,
                     "error": f"Style analysis failed: {str(e)}"
                 }
+                log_analysis_completed(session_id=session_id, analysis_type='style', results=analysis_results["style"])
         
         # Generate LLM feedback if requested and analysis results exist
         if submission.include_llm_feedback and analysis_results:
@@ -119,11 +140,13 @@ async def submit_code(submission: CodeSubmission):
                 submission.code,
                 analysis_results,
                 submission.user_id,
-                submission_id
+                submission_id,
+                session_id
             )
             if llm_result:
                 aggregator.add_result("llm_feedback", llm_result)
                 analysis_results["llm_feedback"] = llm_result
+                analysis_count += 1
         
         # Generate comprehensive report
         report = generate_report(aggregator.get_aggregated_results(), submission_id)
@@ -145,6 +168,9 @@ async def submit_code(submission: CodeSubmission):
         
         # Saves submission to storage
         save_submission(submission_id, submission_data)
+        
+        # Log review completion
+        log_review_completed(session_id=session_id, analysis_count=analysis_count, success=True)
         
         logger.info(f"Analysis completed for submission {submission_id}")
         
@@ -185,7 +211,7 @@ async def delete_submission(submission_id: str):
     del submissions[submission_id]
     return {"message": f"Submission {submission_id} deleted successfully"}
 
-def _call_llm_service(code: str, analysis_results: Dict[str, Any], user_id: str, submission_id: str) -> Optional[Dict[str, Any]]:
+def _call_llm_service(code: str, analysis_results: Dict[str, Any], user_id: str, submission_id: str, session_id: int = 0) -> Optional[Dict[str, Any]]:
     """
     Call the LLM Feedback Service to generate human-readable feedback.
     
@@ -194,6 +220,7 @@ def _call_llm_service(code: str, analysis_results: Dict[str, Any], user_id: str,
         analysis_results: Combined analysis results from other analyzers
         user_id: User identifier
         submission_id: Submission identifier
+        session_id: Review session ID for logging
         
     Returns:
         LLM feedback result or None if service is unavailable
@@ -213,7 +240,21 @@ def _call_llm_service(code: str, analysis_results: Dict[str, Any], user_id: str,
         )
         
         if response.status_code == 200:
-            return response.json()
+            result = response.json()
+            
+            # Log LLM usage if available
+            if 'provider' in result and 'tokens_breakdown' in result:
+                provider = result['provider']
+                tokens = result.get('tokens_breakdown', {})
+                total_tokens = tokens.get('total', 0)
+                log_llm_query(
+                    session_id=session_id,
+                    model=result.get('model', 'unknown'),
+                    tokens_used=total_tokens,
+                    cost=0.0  # Cost calculated separately if needed
+                )
+            
+            return result
         else:
             logger.warning(f"LLM service returned status {response.status_code}")
             return {

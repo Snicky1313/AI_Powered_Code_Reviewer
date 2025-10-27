@@ -1,155 +1,186 @@
-# AI-Powered Python Code Reviewer - Logging Service
+# AI-Powered Python Code Reviewer - Enhanced Logging Service
 
-This directory contains the asynchronous logging service for creating secure audit trails of all review activities. The service consists of a FastAPI producer that accepts log events and a standalone consumer that processes them into a PostgreSQL database via RabbitMQ.
+**Version:** 2.0.0  
+**Status:** Production Ready  
+**Phases Implemented:** Phase 1, 2, 3 (Complete)
+
+## Overview
+
+This directory contains the enhanced asynchronous logging service for creating secure audit trails of all review activities. The service now includes:
+
+- **Phase 1:** Redis-based persistent queue, API Gateway integration
+- **Phase 2:** Query endpoints and analytics
+- **Phase 3:** API authentication, rate limiting, Prometheus metrics
 
 ## Architecture
 
 ```
-┌─────────────────┐    HTTP POST     ┌─────────────────┐    Simple Queue┌─────────────────┐    PostgreSQL    ┌─────────────────┐
-│   Client Apps   │ ──────────────► │   Producer      │ ──────────────► │   Message       │ ──────────────► │   Database      │
-│                 │    /log          │   (FastAPI)     │    Queue        │   Queue         │    Storage      │   (PostgreSQL)  │
-└─────────────────┘                 └─────────────────┘                 └─────────────────┘                 └─────────────────┘
-                                            │                                     │                                     │
-                                            │                                     │                                     │
-                                    ┌─────────────────┐                 ┌─────────────────┐                 ┌─────────────────┐
-                                    │   Health Check  │                 │   Persistent    │                 │   Audit Trail   │
-                                    │   Queue Status  │                 │   Durable Queue │                 │   Log Events    │
-                                    └─────────────────┘                 └─────────────────┘                 └─────────────────┘
+┌─────────────────┐    POST /log     ┌─────────────────┐    Redis Queue   ┌─────────────────┐
+│   API Gateway   │ ──────────────► │    Producer     │ ──────────────► │    PostgreSQL    │
+│   (main.py)     │   (Auth + Rate  │   (Port 8001)   │   Persistent   │    (Port 5432)   │
+│                 │     Limiting)   │   + Metrics     │    Storage      │    Audit Trail   │
+└─────────────────┘                 └─────────────────┘                 └─────────────────┘
+                                             │
+                                             │ /metrics
+                                             ▼
+                                    ┌─────────────────┐
+                                    │  Prometheus     │
+                                    │   Monitoring    │
+                                    └─────────────────┘
+
+┌─────────────────┐    GET /analytics/*     ┌─────────────────┐
+│   Client Apps    │ ────────────────────► │  Query Service  │
+│                 │   (Query & Analysis)   │   (Port 8002)   │
+└─────────────────┘                        └─────────────────┘
 ```
 
-## Components
+## Services
 
 ### 1. Producer Service (`producer.py`)
-- **FastAPI application** that accepts HTTP POST requests with log events
-- **Publishes messages** to RabbitMQ queue for asynchronous processing
-- **Robust error handling** with connection retry mechanisms
-- **Health check endpoints** for monitoring
+- **Port:** 8001
+- **Purpose:** Accept log events via HTTP POST
+- **Security:** API key authentication, rate limiting (1000 req/min)
+- **Monitoring:** Prometheus metrics endpoint at `/metrics`
+- **Queue:** Redis (with fallback to in-memory)
 
 ### 2. Consumer Service (`consumer.py`)
-- **Standalone worker** that continuously processes messages from RabbitMQ
-- **Database integration** with PostgreSQL for persistent storage
-- **Retry logic** with configurable attempts and delays
-- **Graceful shutdown** handling with signal management
+- **Purpose:** Consumes events from Redis queue
+- **Storage:** Stores events in PostgreSQL
+- **Features:** Automatic retry logic, graceful shutdown
 
-### 3. Database Schema (`database_schema.sql`)
-- **PostgreSQL tables** for users, review sessions, and log events
-- **JSONB payload** storage for flexible event data
-- **Indexes** for optimal query performance
-- **Constraints** and validation rules
+### 3. Query Service (`query_service.py`)
+- **Port:** 8002
+- **Purpose:** Query and analytics endpoints
+- **Features:**
+  - `/events` - Query logs with filters
+  - `/events/types` - List event types
+  - `/analytics/usage` - Usage statistics
+  - `/analytics/llm` - LLM usage analytics
+  - `/analytics/performance` - Performance metrics
 
 ## Quick Start
 
-### 1. Environment Setup
-
-Copy the environment template:
-```bash
-cp env_template.txt .env
-```
-
-Edit `.env` with your actual configuration values.
-
-### 2. Install Dependencies
+### 1. Install Dependencies
 
 ```bash
+# Python packages
 pip install -r requirements.txt
+
+# Or specific packages
+pip install redis==5.0.0
+pip install prometheus-client==0.19.0
+pip install psycopg2-binary==2.9.9
 ```
 
-### 3. Database Setup
+### 2. Start Redis
 
-Create the PostgreSQL database and tables:
 ```bash
-# Connect to PostgreSQL as superuser
+docker run -d --name redis-logging -p 6379:6379 redis:latest
+```
+
+### 3. Set Up Database
+
+```bash
+# Run setup script
+psql -U postgres -f setup_database.sql
+
+# Or manually
 psql -U postgres
-
-# Create database and user
 CREATE DATABASE code_reviewer_logs;
-CREATE USER logging_service_user WITH PASSWORD 'your_secure_password';
+CREATE USER logging_service_user WITH PASSWORD 'AhmmedSagor22';
 GRANT ALL PRIVILEGES ON DATABASE code_reviewer_logs TO logging_service_user;
+\q
 
-# Connect to the new database
-\c code_reviewer_logs
-
-# Run the schema creation script
-\i database_schema.sql
+# Load schema
+psql -U logging_service_user -d code_reviewer_logs -f database_schema.sql
 ```
 
-### 4. Start RabbitMQ
+### 4. Configure Environment
 
-Ensure RabbitMQ is running on your system:
 ```bash
-# On Ubuntu/Debian
-sudo systemctl start rabbitmq-server
-
-# On macOS with Homebrew
-brew services start rabbitmq
-
-# On Windows
-# Start RabbitMQ service from Services panel or command line
+cp ../env.template ../.env
+# Edit .env with your actual values
 ```
 
-### 5. Run the Services
+### 5. Start Services
 
-Start the consumer first:
 ```bash
-python consumer.py
-```
-
-In another terminal, start the producer:
-```bash
+# Terminal 1: Producer
+cd logging_service
 python producer.py
+
+# Terminal 2: Consumer
+cd logging_service
+python consumer.py
+
+# Terminal 3: Query Service (Phase 2)
+cd logging_service
+python query_service.py
+
+# Terminal 4: API Gateway
+python ../main.py
 ```
 
 ## API Usage
 
-### Send Log Events
+### Send Log Events (Requires API Key)
 
 ```bash
 curl -X POST "http://localhost:8001/log" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "session_id": 123,
-       "event_type": "review_started",
-       "payload": {
-         "code_language": "python",
-         "file_count": 3,
-         "user_agent": "VSCode/1.74.0"
-       }
-     }'
+  -H "X-API-Key: test_key_123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": 123,
+    "event_type": "review_started",
+    "payload": {
+      "code_language": "python",
+      "file_count": 3
+    }
+  }'
 ```
 
-### Health Check
+### Query Events (Phase 2)
 
 ```bash
-curl http://localhost:8001/health
+# Get recent events
+curl http://localhost:8002/events?limit=10&page=1
+
+# Filter by event type
+curl http://localhost:8002/events?event_type=review_started
+
+# Filter by session
+curl http://localhost:8002/events?session_id=123
 ```
 
-### Queue Status
+### Get Analytics
 
 ```bash
-curl http://localhost:8001/queue/status
+# Usage analytics
+curl http://localhost:8002/analytics/usage?days=7
+
+# LLM usage analytics
+curl http://localhost:8002/analytics/llm?days=7
+
+# Performance analytics
+curl http://localhost:8002/analytics/performance?days=7
+```
+
+### Prometheus Metrics (Phase 3)
+
+```bash
+curl http://localhost:8001/metrics
 ```
 
 ## Event Types
 
-The system supports various event types for comprehensive audit trails:
-
-- `review_started` - When a code review session begins
-- `review_completed` - When a review session completes
-- `review_cancelled` - When a review is cancelled
-- `llm_query_sent` - When a query is sent to the LLM service
-- `llm_feedback_received` - When feedback is received from LLM
-- `llm_error` - When LLM processing encounters errors
-- `syntax_analysis_started` - Beginning of syntax analysis
-- `syntax_analysis_completed` - Completion of syntax analysis
-- `style_analysis_started` - Beginning of style analysis
-- `style_analysis_completed` - Completion of style analysis
-- `security_scan_started` - Beginning of security scan
-- `security_scan_completed` - Completion of security scan
-- `performance_analysis_started` - Beginning of performance analysis
-- `performance_analysis_completed` - Completion of performance analysis
-- `report_generated` - When analysis report is generated
-- `user_action` - General user interactions
-- `system_event` - System-level events
+Supported event types:
+- `review_started` - Code review begins
+- `review_completed` - Review completes
+- `syntax_analysis_started` - Syntax analysis begins
+- `syntax_analysis_completed` - Syntax analysis completes
+- `llm_query_sent` - LLM query made
+- `llm_feedback_received` - LLM response received
+- `error_occurred` - Error event
 
 ## Configuration
 
@@ -157,112 +188,163 @@ The system supports various event types for comprehensive audit trails:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `LOGGING_ENABLED` | Enable/disable logging | `true` |
+| `LOGGING_SERVICE_URL` | Producer URL | `http://localhost:8001/log` |
+| `USE_REDIS_QUEUE` | Use Redis or in-memory | `true` |
+| `REDIS_HOST` | Redis host | `localhost` |
+| `REDIS_PORT` | Redis port | `6379` |
 | `DATABASE_HOST` | PostgreSQL host | `localhost` |
 | `DATABASE_PORT` | PostgreSQL port | `5432` |
 | `DATABASE_NAME` | Database name | `code_reviewer_logs` |
 | `DATABASE_USER` | Database user | `logging_service_user` |
-| `DATABASE_PASSWORD` | Database password | Required |
-| `RABBITMQ_HOST` | RabbitMQ host | `localhost` |
-| `RABBITMQ_PORT` | RabbitMQ port | `5672` |
-| `RABBITMQ_USER` | RabbitMQ username | `guest` |
-| `RABBITMQ_PASSWORD` | RabbitMQ password | `guest` |
-| `RABBITMQ_VHOST` | RabbitMQ virtual host | `/` |
-| `RABBITMQ_QUEUE_NAME` | Queue name | `log_queue` |
-| `LOG_LEVEL` | Logging level | `INFO` |
-| `ENVIRONMENT` | Environment type | `development` |
-| `PRODUCER_HOST` | Producer service host | `0.0.0.0` |
-| `PRODUCER_PORT` | Producer service port | `8001` |
-| `CONSUMER_RETRY_ATTEMPTS` | Consumer retry attempts | `3` |
-| `CONSUMER_RETRY_DELAY` | Consumer retry delay (seconds) | `5` |
+| `DATABASE_PASSWORD` | Database password | (Required) |
+| `ADMIN_API_KEY` | Admin API key | (Required) |
+| `PRODUCER_PORT` | Producer port | `8001` |
+| `QUERY_SERVICE_PORT` | Query service port | `8002` |
 
-## Monitoring and Observability
+## Security Features (Phase 3)
 
-### Logging
-Both services provide comprehensive logging with configurable levels:
-- **INFO**: Normal operations and successful processing
-- **WARNING**: Recoverable errors and unusual conditions
-- **ERROR**: Serious errors that need attention
-- **DEBUG**: Detailed debugging information
+- **API Key Authentication:** All endpoints require valid API key
+- **Rate Limiting:** 1000 requests/minute (configurable)
+- **Prometheus Metrics:** Real-time monitoring
+- **Health Checks:** Service availability monitoring
 
-### Health Checks
-- Producer health check: `GET /health`
-- Queue status monitoring: `GET /queue/status`
-- Database connectivity validation
+## Monitoring
 
-### Error Handling
-- **Connection failures**: Automatic retry with exponential backoff
-- **Message processing errors**: Configurable retry attempts
-- **Database errors**: Transaction rollback and error logging
-- **Graceful shutdown**: Signal handling for clean service termination
+### Key Metrics
 
-## Production Considerations
+- `api_requests_total` - Total API requests
+- `log_events_total` - Total log events
+- `queue_size` - Current queue depth
+- `request_duration_seconds` - Response time
+- `llm_queries_total` - LLM usage
 
-### Security
-- Use strong database passwords
-- Configure RabbitMQ authentication
-- Enable SSL/TLS for database and message queue connections
-- Implement proper firewall rules
-- Regular security updates
+### Grafana Dashboard
 
-### Performance
-- Monitor queue depth and processing rates
-- Scale consumer instances based on load
-- Optimize database queries and indexes
-- Configure appropriate connection pooling
+Import Prometheus data source and create dashboards for:
+- Request rate and latency
+- Queue depth over time
+- LLM usage and costs
+- Error rates
 
-### Reliability
-- Set up database replication
-- Configure RabbitMQ clustering
-- Implement proper backup strategies
-- Monitor disk space and system resources
+## Testing
 
-### Deployment
-- Use Docker containers for consistent deployment
-- Implement proper logging aggregation
-- Set up monitoring and alerting
-- Use environment-specific configurations
+```bash
+# Run test script
+python test_logging_service.py
+
+# Test all endpoints
+curl http://localhost:8001/health
+curl -H "X-API-Key: test_key_123" http://localhost:8001/log
+curl http://localhost:8002/events
+curl http://localhost:8002/analytics/usage
+curl http://localhost:8001/metrics
+```
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **Connection Refused Errors**
-   - Verify RabbitMQ and PostgreSQL services are running
-   - Check network connectivity and firewall settings
-   - Validate connection parameters in `.env`
-
-2. **Message Processing Failures**
-   - Check database connectivity and permissions
-   - Verify table schema matches expected structure
-   - Review consumer logs for specific error details
-
-3. **Queue Buildup**
-   - Monitor consumer processing rate
-   - Check for database performance issues
-   - Consider scaling consumer instances
-
-4. **Authentication Errors**
-   - Verify database and RabbitMQ credentials
-   - Check user permissions and privileges
-   - Ensure password special characters are properly escaped
-
-### Debug Commands
+### Service Won't Start
 
 ```bash
-# Check RabbitMQ queue status
-rabbitmqctl list_queues name messages consumers
+# Check Redis
+redis-cli PING
 
-# Test database connection
-psql -h localhost -U logging_service_user -d code_reviewer_logs -c "SELECT COUNT(*) FROM log_events;"
+# Check database
+psql -U logging_service_user -d code_reviewer_logs
 
-# Monitor consumer processing
-tail -f consumer.log | grep "Log event processed"
-
-# Check producer health
-curl -s http://localhost:8001/health | jq .
+# Check ports
+netstat -tuln | grep -E '8001|8002|5432'
 ```
 
-## License
+### Authentication Failures
 
-This logging service is part of the AI-Powered Python Code Reviewer project. See the main project LICENSE file for details.
+```bash
+# Verify API key
+curl -H "X-API-Key: test_key_123" http://localhost:8001/health
+```
 
+### Database Connection Issues
+
+```bash
+# Check PostgreSQL is running
+sudo systemctl status postgresql
+
+# Test connection
+psql -U logging_service_user -d code_reviewer_logs
+```
+
+## Files
+
+### Core Services
+- `producer.py` - Producer service (Phase 1, 3)
+- `consumer.py` - Consumer service (Phase 1)
+- `query_service.py` - Query and analytics service (Phase 2)
+
+### Infrastructure
+- `redis_queue.py` - Redis queue implementation (Phase 1)
+- `auth.py` - Authentication and rate limiting (Phase 3)
+- `metrics.py` - Prometheus metrics (Phase 3)
+
+### Configuration
+- `requirements.txt` - Python dependencies
+- `setup_database.sql` - Database setup script
+- `database_schema.sql` - Database schema
+- `.env` - Environment configuration (copy from ../env.template)
+
+### Testing
+- `test_logging_service.py` - Test script
+
+## Production Deployment
+
+### Systemd Services
+
+```bash
+# Create service files
+sudo nano /etc/systemd/system/logging-producer.service
+sudo nano /etc/systemd/system/logging-consumer.service
+sudo nano /etc/systemd/system/logging-query.service
+
+# Enable and start
+sudo systemctl enable logging-producer
+sudo systemctl enable logging-consumer
+sudo systemctl enable logging-query
+sudo systemctl start logging-producer
+sudo systemctl start logging-consumer
+sudo systemctl start logging-query
+```
+
+### Monitoring Setup
+
+```bash
+# Install Prometheus
+wget https://github.com/prometheus/prometheus/releases/download/v2.40.0/prometheus-2.40.0.linux-amd64.tar.gz
+tar xvfz prometheus-2.40.0.linux-amd64.tar.gz
+
+# Configure scrape targets
+# Edit prometheus.yml to include localhost:8001
+
+# Start Prometheus
+./prometheus --config.file=prometheus.yml
+```
+
+## Next Steps
+
+1. Set up production API keys
+2. Configure monitoring alerts
+3. Set up log rotation
+4. Implement backup strategy
+5. Configure SSL/TLS
+
+## Support
+
+For issues or questions:
+- Check service health: `curl http://localhost:8001/health`
+- View metrics: `curl http://localhost:8001/metrics`
+- Review logs: Check service terminal output
+- Consult documentation: See `LOGGING_ENHANCEMENT_COMPLETE.md`
+
+---
+
+**Status:** Production Ready ✅  
+**Version:** 2.0.0  
+**Last Updated:** 2025-01-XX
