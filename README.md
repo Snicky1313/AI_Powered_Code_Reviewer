@@ -47,13 +47,18 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-#### 2. To start the server
-```
-python main.py
+#### 2. Start the API Gateway (FastAPI)
+Simplest (one command):
+```bash
+bash scripts/start_gateway.sh
 ```
 
-After doing this, the server will start on `http://localhost:8000`
-(IF this doesnt work, run "uvicorn main:app --reload" in the terminal inside the folder of where main.py is located
+Dev (auto-reload):
+```bash
+bash scripts/start_gateway_uvicorn.sh
+```
+
+After doing this, the server will start on `http://localhost:8000`.
 
 #### 3. View API docs
 When the server is running, open a browser and go to:
@@ -181,9 +186,9 @@ Analyzes Python code style using flake8 and custom checks for line length, white
 
 #### 1. Start the Style Analyzer Service (do this in VS Code terminal)
 ```bash
-python ai_code_reviewer.analyzers.staticA.py
+bash scripts/start_style.sh
 ```
-*Service will start on http://localhost:5002, insert that website link in a different tab.*
+*Service will start on http://localhost:5002*
 
 #### 2. Test the Service (Open a NEW terminal and insert these commands)
 
@@ -341,68 +346,36 @@ This will generate a JSON report (security_report.json) summarizing the detected
 
 
 ## Performance Profiler - Task 1.6
-**File location:** `ai_code_reviewer.analyzers.performance_profiler.py`   
+**File location:** `src/ai_code_reviewer/analyzers/performancePROF.py`   
 
 ### What it does
-**What it does:**  
-The performance profiler runs Python code in an isolated enviornment to measure its performance based on execution. It also checks how long the code takes to execute, how much output is generated, and whether is was completed successfully or timed out.
+The performance profiler executes Python code in a temporary file with a strict timeout, measures runtime, and flags excessive output to prevent system overloads.
 
-### How to use the Performance Profiler
+### How to use the Performance Profiler (library usage)
 
-#### 1. Start the Style Analyzer Service (do this in VS Code terminal)
+Run an on-the-fly demo:
 ```bash
-python ai_code_reviewer.analyzers.performancePROF.py
+python - <<'PY'
+from ai_code_reviewer.analyzers.performancePROF import PerformanceAnalyzer
+code_ok = "print('hi')"
+code_timeout = "while True: pass"
+an = PerformanceAnalyzer(timeout_seconds=1.0)
+print("OK:", an.analyze(code_ok))
+print("Timeout:", an.analyze(code_timeout))
+PY
 ```
 
-#### 2. Test the Service 
-
-**Health Check:**
-```bash
-curl -s http://localhost:5004/health
-```
-
-**Test with fast code:**
-```bash
-curl -s -X POST http://localhost:5004/performance \
-  -H "Content-Type: application/json" \
-  -d '{"code":"print(\"Hello World\")\n","user_id":"demo","submission_id":"demo-1"}'
-```
-
-**Test with slow code:**
-```bash
-curl -s -X POST http://localhost:5004/performance \
-  -H "Content-Type: application/json" \
-  -d '{"code":"import time\ntime.sleep(3)\nprint(\"Done\")\n","user_id":"demo","submission_id":"demo-2"}'
-```
-
-#### 3. Expected Results
-
-**Fast Code example:**
-- Runtime: 0.001-0.01 seconds
-- Success: true
-- Return code: 0
-- Minimal output sizes
-
-**Slow Code example:**
-- Runtime: 2 seconds
-- Success: false
-- RError: "timeout"
-- Execution terminated safely
-
-#### 4. Return Format
+Example result shape:
 ```json
 {
   "success": true,
-  "ok": true,
-  "runtime_seconds": 0.001234,
-  "return_code": 0,
-  "stdout_size": 12,
+  "ok": false,
+  "runtime_seconds": 1.0,
+  "error": "timeout",
+  "stdout_size": 0,
   "stderr_size": 0
 }
 ```
-
-#### 5. How to Stop the Service
-Press `Ctrl+C` in the terminal where the service is running.
 
 
 ## LLM Feedback Service - Task 1.7
@@ -939,6 +912,3 @@ The **Aggregator** produces two output files:
 **## Storage & Logging Task 1.9**
 
 ```
-
-
-
