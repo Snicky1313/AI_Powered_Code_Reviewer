@@ -80,12 +80,17 @@ When the server is running, open a browser and go to:
 
 ### How to test the API Gateway
 
-#### Method 1: Run the test script (do this in your terminal)
+#### Method 1: Run the simple test script (recommended)
+```bash
+bash scripts/test_gateway.sh
 ```
+
+#### Method 2: Run the original test script
+```bash
 python testForAPI.py
 ```
 
-### Method 2: Using the Web
+#### Method 3: Using the Web
 1. Go to http://localhost:8000/docs
 2. Click on the 'submit' column
 3. Click "Try it out"
@@ -190,21 +195,28 @@ bash scripts/start_style.sh
 ```
 *Service will start on http://localhost:5002*
 
-#### 2. Test the Service (Open a NEW terminal and insert these commands)
+#### 2. Test the Service
 
-**Health Check:**
+**Simple test script (recommended):**
+```bash
+bash scripts/test_style.sh
+```
+
+**Manual testing (open a NEW terminal):**
+
+Health Check:
 ```bash
 curl -s http://localhost:5002/health
 ```
 
-**Test with "bad" code (shows violations):**
+Test with "bad" code (shows violations):
 ```bash
 curl -s -X POST http://localhost:5002/style \
   -H "Content-Type: application/json" \
   -d '{"code":"def add(a,b):\n\treturn  a+ b  \n","user_id":"demo","submission_id":"demo-1"}'
 ```
 
-**Test with "good" code (minimal issues):**
+Test with "good" code (minimal issues):
 ```bash
 curl -s -X POST http://localhost:5002/style \
   -H "Content-Type: application/json" \
@@ -351,9 +363,24 @@ This will generate a JSON report (security_report.json) summarizing the detected
 ### What it does
 The performance profiler executes Python code in a temporary file with a strict timeout, measures runtime, and flags excessive output to prevent system overloads.
 
-### How to use the Performance Profiler (library usage)
+### How to use the Performance Profiler
 
-Run an on-the-fly demo:
+#### 1. Run the demo (simple)
+```bash
+bash scripts/demo_performance.sh
+```
+
+#### 2. Run comprehensive tests
+```bash
+bash scripts/test_performance.sh
+```
+
+#### 3. Manual usage (Python script)
+```bash
+python scripts/demo_performance.py
+```
+
+#### 4. Manual usage (inline Python)
 ```bash
 python - <<'PY'
 from ai_code_reviewer.analyzers.performancePROF import PerformanceAnalyzer
@@ -365,7 +392,22 @@ print("Timeout:", an.analyze(code_timeout))
 PY
 ```
 
-Example result shape:
+### Example Results
+
+Fast code result:
+```json
+{
+  "success": true,
+  "ok": true,
+  "runtime_seconds": 0.001234,
+  "return_code": 0,
+  "stdout_size": 3,
+  "stderr_size": 0,
+  "excessive_output": false
+}
+```
+
+Timeout result:
 ```json
 {
   "success": true,
@@ -912,3 +954,6 @@ The **Aggregator** produces two output files:
 **## Storage & Logging Task 1.9**
 
 ```
+
+
+
