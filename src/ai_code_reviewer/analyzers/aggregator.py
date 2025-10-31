@@ -103,8 +103,9 @@ def build_summary(results: dict) -> dict:
         "security_issues": security_issues,
         "style_score": style_score,
         "performance_runtime_sec": perf_time,
-        "overall_status": "PASS" if total_issues == 0 else "ERRORS FOUND",
-        "style grade": results["style"]["summary"]["grade"] if "summary" in results["style"] else "N/A"
+        "style grade": results["style"]["summary"]["grade"] if "summary" in results["style"] else "N/A",
+        "overall_status": "PASS" if total_issues == 0 else "ERRORS FOUND"
+        
     }
 
 
@@ -181,22 +182,22 @@ if __name__ == "__main__":
     try:
         print("\nSending report to LLM Feedback Service...")
         llm_response = requests.post(
-            "http://localhost:5003/feedback",  # LLM service endpoint
-            json={"code": source, "analysis_results": full_report},
+            "http://127.0.0.1:5003/generate_feedback", # Updated endpoint for Trussed API
+            json={"combined_report": full_report},
             timeout=120
         )
         llm_result = llm_response.json()
 
         # Save the GPT-enhanced feedback
         with open("final_feedback.json", "w", encoding="utf-8") as f:
-            json.dump(llm_result, f, indent=4)
+            json.dump(llm_result, f)
         print("*** LLM feedback received and saved to final_feedback.json ***")
 
         # Display summary text in console
         print("\n" + "=" * 60)
         print(" AI-GENERATED FEEDBACK SUMMARY")
         print("=" * 60)
-        print(llm_result.get("feedback", "(No feedback received)"))
+        print(llm_result.get("llm_feedback", "(No feedback received)"))
         print("=" * 60 + "\n")
 
     except Exception as e:
@@ -224,6 +225,14 @@ if __name__ == "__main__":
   Syntax Issues  : {summary.get("syntax_issues")}
   Security Issues: {summary.get("security_issues")}
   Style Score    : {summary.get("style_score")}%
-  Style Grade    : {summary.get("grade")}
+  Style Grade    : {summary.get("style grade")}
 -----------------------------------------------------
 """)
+
+#instructions: 
+# Set the key in environment first: In windows PowerShell, insert this line setx OPENAI_API_KEY "WUs7HU5qGmJnmHsmGyXmEOTJnXfkPK7X1rqDgy6wbmWWc3uO"
+#close and reopen PowerShell to it takes effect. Type in echo $env:OPENAI_API_KEY to make sure it works. It should print the key, WU...
+# Go to VSCode to the project folder
+#run flask first and keep it running in background. Insert: python src\ai_code_reviewer\analyzers\llm_feedback.py
+# In a new terminal, run the aggregator using the test code. Insert: python src\ai_code_reviewer\analyzers\aggregator.py src\ai_code_reviewer\test_code.py
+#That's it ! Hope it works, not sure how to do it on a Mac
