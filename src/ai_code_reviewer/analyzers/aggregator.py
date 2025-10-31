@@ -15,36 +15,9 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from analyzers.syntax import check_python_syntax
 from analyzers.security import check_python_security
 from analyzers.staticA import StyleAnalyzer
+from analyzers.performancePROF import PerformanceAnalyzer
 
-# Performance analyzer is optional
-try:
-    from analyzers.performancePROF import PerformanceAnalyzer
-    PERFORMANCE_AVAILABLE = True
-except ImportError:
-    PERFORMANCE_AVAILABLE = False
-    PerformanceAnalyzer = None
-
-# ---------- AGGREGATOR CLASS (for FastAPI integration) ----------
-
-class Aggregator:
-    """
-    Aggregator class for collecting analysis results.
-    Used by FastAPI main.py for collecting results from multiple analyzers.
-    """
-    
-    def __init__(self):
-        self.results = {}
-    
-    def add_result(self, analysis_type: str, result: dict):
-        """Add a result from an analyzer."""
-        self.results[analysis_type] = result
-    
-    def get_aggregated_results(self) -> dict:
-        """Get all collected results."""
-        return self.results
-
-
-# ---------- MAIN AGGREGATOR (standalone functions) ----------
+# ---------- MAIN AGGREGATOR ----------
 
 def run_all_analyzers(source_code: str, filename: str = "<string>") -> dict:
     """
@@ -72,15 +45,13 @@ def run_all_analyzers(source_code: str, filename: str = "<string>") -> dict:
     style_report["filename"] = filename
     results["style"] = style_report
 
-    #  Performance Analyzer (if available)
-    if PERFORMANCE_AVAILABLE:
-        print("→ Running Performance Analyzer...")
-        perf_analyzer = PerformanceAnalyzer()
-        perf_report = perf_analyzer.analyze(source_code)
-        perf_report["filename"] = filename
-        results["performance"] = perf_report
-    else:
-        results["performance"] = {"ok": True, "message": "Performance analyzer not available"}
+    #  Performance Analyzer
+    print("→ Running Performance Analyzer...")
+    perf_analyzer = PerformanceAnalyzer()
+    perf_report = perf_analyzer.analyze(source_code)
+    perf_report["filename"] = filename
+    print(f"→ Performance time: {perf_report.get('runtime_seconds', 'N/A')} sec")
+    results["performance"] = perf_report
 
     # ---------- SUMMARY ----------
     results["summary"] = build_summary(results)
@@ -107,47 +78,6 @@ def build_summary(results: dict) -> dict:
         "overall_status": "PASS" if total_issues == 0 else "ERRORS FOUND"
         
     }
-
-
-def generate_report(results: dict, submission_id: str) -> str:
-    """
-    Generate a human-readable report from aggregated results.
-    
-    Args:
-        results: Dictionary containing analysis results
-        submission_id: ID of the submission
-        
-    Returns:
-        Formatted report string
-    """
-    report_lines = []
-    report_lines.append(f"Code Review Report - Submission ID: {submission_id}")
-    report_lines.append("=" * 80)
-    
-    for analysis_type, result in results.items():
-        if isinstance(result, dict):
-            report_lines.append(f"\n{analysis_type.upper()} Analysis:")
-            report_lines.append("-" * 80)
-            
-            # Add relevant fields from the result
-            if 'findings' in result:
-                findings = result['findings']
-                report_lines.append(f"Findings: {len(findings)}")
-                for finding in findings[:5]:  # Show first 5 findings
-                    if isinstance(finding, dict):
-                        report_lines.append(f"  - {finding.get('message', 'N/A')} at line {finding.get('location', {}).get('start', {}).get('line', '?')}")
-            
-            if 'style_score' in result:
-                report_lines.append(f"Style Score: {result['style_score']}")
-            
-            if 'summary' in result:
-                summary = result['summary']
-                if isinstance(summary, str):
-                    report_lines.append(f"Summary: {summary}")
-                elif isinstance(summary, dict):
-                    report_lines.append(f"Summary: {summary}")
-    
-    return "\n".join(report_lines)
 
 
 def save_report(report: dict, output_path: str = "combined_report.json"):
@@ -177,20 +107,61 @@ if __name__ == "__main__":
     full_report = run_all_analyzers(source, filename=file_path.name)
     save_report(full_report)
 
+def format_report_with_line_numbers(report: dict) -> str:
+    """Add line numbers for each issue found by analyzers."""
+    lines = []
+    for category, results in report.items():
+        lines.append(f"\n=== {category.upper()} ANALYSIS ===")
+        findings = results.get("findings") or results.get("violations") or []
+        if findings:
+            for f in findings:
+                line_no = f.get("line") or f.get("location", {}).get("start", {}).get("line")
+                msg = f.get("message") or f.get("text") or "No message"
+                lines.append(f"Line {line_no or '?'}: {msg}")
+        else:
+            lines.append("✓ No issues found.")
+    return "\n".join(lines)
+
+
+# ---------- MAIN EXECUTION FLOW ----------
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python aggregator.py <python_file_to_analyze>")
+        sys.exit(1)
+
+    file_path = pathlib.Path(sys.argv[1])
+    if not file_path.exists():
+        print(f"Error: File not found: {file_path}")
+        sys.exit(1)
+
+    source = file_path.read_text(encoding="utf-8")
+    full_report = run_all_analyzers(source, filename=file_path.name)
+    save_report(full_report)
+
+    # ---------- SEND TO LLM_FEEDBACK.PY ----------
         # ---------- SEND TO LLM_FEEDBACK.PY ----------
-        # ---------- Send Report to LLM Feedback Service ----------
     try:
         print("\nSending report to LLM Feedback Service...")
+
+        # Build a readable summary with line numbers + runtime
+        report_with_lines = format_report_with_line_numbers(full_report)
+        runtime = full_report.get("summary", {}).get("performance_runtime_sec", "N/A")
+
+        # Combine the formatted findings and runtime into one string
+        report_for_llm = f"{report_with_lines}\n\n=== PERFORMANCE SUMMARY ===\nRuntime: {runtime} seconds"
+
+        # Send both the structured and readable versions
         llm_response = requests.post(
-            "http://127.0.0.1:5003/generate_feedback", # Updated endpoint for Trussed API
-            json={"combined_report": full_report},
+            "http://localhost:5003/generate_feedback",
+            json={"combined_report": report_for_llm},
             timeout=120
         )
+
         llm_result = llm_response.json()
 
         # Save the GPT-enhanced feedback
         with open("final_feedback.json", "w", encoding="utf-8") as f:
-            json.dump(llm_result, f)
+            json.dump(llm_result, f, indent=4)
         print("*** LLM feedback received and saved to final_feedback.json ***")
 
         # Display summary text in console
@@ -203,7 +174,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Failed to get LLM feedback: {e}")
 
-    # ---------- Normalize Results (If the LLM requires normalized results and can't read embedded JSON) ----------
+    # ---------- NORMALIZE RESULTS ----------
     try:
         from normalizer import normalize_report
         print("\nNormalizing results for LLM module...")
@@ -212,27 +183,30 @@ if __name__ == "__main__":
             json.dump(normalized, f, indent=4)
         print("*** NORMALIZED report saved to normalized_report.json *** \n\n\n")
     except Exception as e:
-        print(f"*** Normalization failed: {e}***")
+        print(f"*** Normalization failed: {e} ***")
 
-    # SUMMARY WITHOUT GOING TO COMBINED REPORT
+    # ---------- PRINT FINAL SUMMARY ----------
     summary = full_report.get("summary", {})
     print(f"""
 -----------------------------------------------------
   FINAL STATUS REPORT SUMMARY (see output files for details)
 -----------------------------------------------------
-  Overall Status : {summary.get("overall_status")}
-  Total Issues   : {summary.get("total_issues")}
-  Syntax Issues  : {summary.get("syntax_issues")}
-  Security Issues: {summary.get("security_issues")}
-  Style Score    : {summary.get("style_score")}%
-  Style Grade    : {summary.get("style grade")}
+  Overall Status   : {summary.get("overall_status")}
+  Total Issues     : {summary.get("total_issues")}
+  Syntax Issues    : {summary.get("syntax_issues")}
+  Security Issues  : {summary.get("security_issues")}
+  Style Score      : {summary.get("style_score")}%
+  Style Grade      : {summary.get("style grade")}
+  Performance Time : {summary.get("performance_runtime_sec")} sec
 -----------------------------------------------------
 """)
 
+
+
 #instructions: 
-# Set the key in environment first: In windows PowerShell, insert this line setx OPENAI_API_KEY "WUs7HU5qGmJnmHsmGyXmEOTJnXfkPK7X1rqDgy6wbmWWc3uO"
-#close and reopen PowerShell to it takes effect. Type in echo $env:OPENAI_API_KEY to make sure it works. It should print the key, WU...
-# Go to VSCode to the project folder
-#run flask first and keep it running in background. Insert: python src\ai_code_reviewer\analyzers\llm_feedback.py
+# Set the key in your environment first: In windows PowerShell (MAC?), insert this line: setx OPENAI_API_KEY "WUs7HU5qGmJnmHsmGyXmEOTJnXfkPK7X1rqDgy6wbmWWc3uO"
+#close and reopen PowerShell so it takes effect. Type in echo $env:OPENAI_API_KEY to make sure it worked. It should print the key, WU...
+# Then leave that open and go to VSCode to the project folder
+#run flask first and keep it running in background. In the terminal insert: python src\ai_code_reviewer\analyzers\llm_feedback.py
 # In a new terminal, run the aggregator using the test code. Insert: python src\ai_code_reviewer\analyzers\aggregator.py src\ai_code_reviewer\test_code.py
 #That's it ! Hope it works, not sure how to do it on a Mac
