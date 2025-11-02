@@ -91,6 +91,7 @@ def _finding(
         },
         "snippet": snippet,
         "caret": _make_caret(col, end_col),
+        "line": line,  #new add 11.2.25
         "suggestion": _suggest_fix(message, frag or snippet) or "",
     }
 
@@ -111,7 +112,7 @@ def _dedupe_findings(findings: List[Dict]) -> List[Dict]:
         out.append(f)
     return out
 
-# ---------- engine A: parso (preferred) ----------
+# ---------- engine A: parso (preferred engine for finding syntax errors) ----------
 
 def _check_with_parso(code: str, filename: Optional[str]) -> Dict:
     import parso
@@ -120,6 +121,21 @@ def _check_with_parso(code: str, filename: Optional[str]) -> Dict:
     module = parso.parse(code)
     findings: List[Dict] = []
 
+    # --- NEW: also check module.errors, which Parso sets for invalid syntax ---
+    for err in getattr(module, "errors", []):
+        try:
+            (line, col) = err.start_pos
+            (end_line, end_col) = err.end_pos
+        except AttributeError:
+            line, col, end_line, end_col = 1, 1, 1, 1
+
+        msg = getattr(err, "message", str(err))
+        frag = _safe_get_line(code, line)
+        findings.append(
+            _finding(code, filename, "SyntaxError", msg, line, col, end_line, end_col, len(findings) + 1, frag)
+        )
+
+    # ---------- existing recursive walk ----------
     def walk(node, idx_holder: Dict[str, int]):
         if isinstance(node, (ErrorLeaf, ErrorNode)):
             try:
@@ -149,7 +165,8 @@ def _check_with_parso(code: str, filename: Optional[str]) -> Dict:
     findings = _dedupe_findings(findings)
     return {"ok": len(findings) == 0, "findings": findings, "filename": filename or "<string>"}
 
-# ---------- engine B: mask & re-parse (fallback) ----------
+
+# ---------- engine B: mask & re-parse (fallback, also used to report syntax error line numbers ) ----------
 
 def _check_with_masking(code: str, filename: Optional[str]) -> Dict:
     findings: List[Dict] = []
@@ -203,12 +220,22 @@ def check_python_syntax(code: str, *, filename: Optional[str] = None) -> Dict:
 
     try:
         print(">>> Using PARSO engine")
-        return _check_with_parso(code, filename)
+        report = _check_with_parso(code, filename)
+
+        # If Parso collapses all findings to line 1, rerun masking engine for true lines
+        if (not report["ok"]) and all(
+            f["location"]["start"]["line"] == 1 for f in report["findings"]
+        ):
+            print(">>> Using MASKING engine for accurate line numbers")
+            return _check_with_masking(code, filename)
+
+        return report
+
     except Exception as e:
         print(f">>> Parso failed ({e}), falling back to MASKING engine")
         return _check_with_masking(code, filename)
 
-# ---------- run directly ----------
+# ---------- run directly if you want to run syntax.py directly with the below demo code ----------
 
 def _print_line_and_message(report):
     if report["ok"]:

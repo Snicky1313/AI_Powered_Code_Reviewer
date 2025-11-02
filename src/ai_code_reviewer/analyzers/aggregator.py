@@ -17,7 +17,6 @@ from analyzers.security import check_python_security
 from analyzers.staticA import StyleAnalyzer
 from analyzers.performancePROF import PerformanceAnalyzer
 
-# ---------- MAIN AGGREGATOR ----------
 
 def run_all_analyzers(source_code: str, filename: str = "<string>") -> dict:
     """
@@ -25,27 +24,56 @@ def run_all_analyzers(source_code: str, filename: str = "<string>") -> dict:
     Returns a unified structured report.
     """
     print("\n Starting full analysis for:", filename)
-
     results = {}
 
-    #  Syntax Analyzer
+    # Run Syntax Analyzer first
     print("→ Running Syntax Analyzer...")
     syntax_report = check_python_syntax(source_code, filename=filename)
     results["syntax"] = syntax_report
 
-    #  Security Analyzer
+    # If syntax errors exist — stop and prompt user
+    if not syntax_report.get("ok", True):
+        findings = syntax_report.get("findings", [])
+        print("\nSyntax errors detected. Please fix these before continuing:\n")
+        for f in findings:
+            line = (
+                f.get("line")
+                or f.get("location", {}).get("start", {}).get("line")
+                or f.get("line_number")
+                or "?"
+            )
+
+            msg = f.get("message", "Unknown syntax error")
+            snippet = f.get("snippet", "").strip()
+            print(f"Line {line}: {msg}")
+            if snippet:
+                print(f"    → {snippet}")
+        print("\n Fix the syntax issues above, then re-run the Aggregator.")
+
+        # Partial report sent to LLM
+        partial_report = {
+            "syntax": syntax_report,
+            "summary": {
+                "overall_status": "STOPPED_DUE_TO_SYNTAX_ERRORS",
+                "message": (
+                    "Syntax errors were found in your code. "
+                    "Please correct them before running further analysis."
+                ),
+            },
+        }
+        return partial_report
+
+    # Run remaining analyzers
     print("→ Running Security Analyzer...")
     security_report = check_python_security(source_code, filename=filename)
     results["security"] = security_report
 
-    #  Style Analyzer
     print("→ Running Style Analyzer...")
     style_analyzer = StyleAnalyzer()
     style_report = style_analyzer.analyze(source_code)
     style_report["filename"] = filename
     results["style"] = style_report
 
-    #  Performance Analyzer
     print("→ Running Performance Analyzer...")
     perf_analyzer = PerformanceAnalyzer()
     perf_report = perf_analyzer.analyze(source_code)
@@ -53,7 +81,7 @@ def run_all_analyzers(source_code: str, filename: str = "<string>") -> dict:
     print(f"→ Performance time: {perf_report.get('runtime_seconds', 'N/A')} sec")
     results["performance"] = perf_report
 
-    # ---------- SUMMARY ----------
+    # Build summary
     results["summary"] = build_summary(results)
     print("\n Analysis complete")
     return results
@@ -65,7 +93,6 @@ def build_summary(results: dict) -> dict:
     security_issues = len(results["security"].get("findings", []))
     style_score = results["style"].get("style_score", 0)
     perf_time = results["performance"].get("runtime_seconds", None)
-
     total_issues = syntax_issues + security_issues + len(results["style"].get("violations", []))
 
     return {
@@ -74,9 +101,8 @@ def build_summary(results: dict) -> dict:
         "security_issues": security_issues,
         "style_score": style_score,
         "performance_runtime_sec": perf_time,
-        "style grade": results["style"]["summary"]["grade"] if "summary" in results["style"] else "N/A",
-        "overall_status": "PASS" if total_issues == 0 else "ERRORS FOUND"
-        
+        "style grade": results["style"].get("summary", {}).get("grade", "N/A"),
+        "overall_status": "PASS" if total_issues == 0 else "ERRORS FOUND",
     }
 
 
@@ -84,28 +110,9 @@ def save_report(report: dict, output_path: str = "combined_report.json"):
     """Save combined report as JSON file."""
     with open(output_path, "w", encoding="utf-8") as f:
         print(f"Saving report to: {os.path.abspath(output_path)}")
-
         json.dump(report, f, indent=4)
     print(f"\n*** REPORT saved to {output_path} ***")
 
-
-# ---------- CLI MODE (Command Line Interface) ----------
-
-if __name__ == "__main__":
-    import sys
-
-    if len(sys.argv) < 2:
-        print("Usage: python aggregator.py <python_file_to_analyze>")
-        sys.exit(1)
-
-    file_path = pathlib.Path(sys.argv[1])
-    if not file_path.exists():
-        print(f"Error: File not found: {file_path}")
-        sys.exit(1)
-
-    source = file_path.read_text(encoding="utf-8")
-    full_report = run_all_analyzers(source, filename=file_path.name)
-    save_report(full_report)
 
 def format_report_with_line_numbers(report: dict) -> str:
     """Add line numbers for each issue found by analyzers."""
@@ -123,7 +130,6 @@ def format_report_with_line_numbers(report: dict) -> str:
     return "\n".join(lines)
 
 
-# ---------- MAIN EXECUTION FLOW ----------
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python aggregator.py <python_file_to_analyze>")
@@ -139,32 +145,68 @@ if __name__ == "__main__":
     save_report(full_report)
 
     # ---------- SEND TO LLM_FEEDBACK.PY ----------
-        # ---------- SEND TO LLM_FEEDBACK.PY ----------
     try:
-        print("\nSending report to LLM Feedback Service...")
+        if full_report.get("summary", {}).get("overall_status") == "STOPPED_DUE_TO_SYNTAX_ERRORS":
+            print("\n Syntax errors detected — generating simple AI feedback message.")
 
-        # Build a readable summary with line numbers + runtime
-        report_with_lines = format_report_with_line_numbers(full_report)
-        runtime = full_report.get("summary", {}).get("performance_runtime_sec", "N/A")
+            # Build user-friendly LLM feedback summary
+            syntax_findings = full_report.get("syntax", {}).get("findings", [])
+            if syntax_findings:
+                error_lines = []
+                for f in syntax_findings:
+                    line = (
+                        f.get("line")
+                        or f.get("location", {}).get("start", {}).get("line")
+                        or f.get("line_number")
+                        or "?"
+                    )
+                    msg = f.get("message", "Unknown syntax error")
+                    snippet = f.get("snippet", "").strip()
+                    error_lines.append(f"- Line {line}: {msg}\n    → {snippet}")
 
-        # Combine the formatted findings and runtime into one string
-        report_for_llm = f"{report_with_lines}\n\n=== PERFORMANCE SUMMARY ===\nRuntime: {runtime} seconds"
+                formatted_errors = "\n".join(error_lines)
+                llm_feedback_text = (
+                    "Your code contains syntax errors that must be fixed before a full analysis can continue.\n\n"
+                    "Here’s what I found:\n"
+                    f"{formatted_errors}\n\n"
+                    "Once these are corrected, please re-run the AI Code Reviewer to receive full feedback "
+                    "on security, style, and performance."
+                )
+            else:
+                llm_feedback_text = (
+                    "It looks like there are syntax errors in your code that need to be addressed before full analysis can continue."
+                )
 
-        # Send both the structured and readable versions
-        llm_response = requests.post(
-            "http://localhost:5003/generate_feedback",
-            json={"combined_report": report_for_llm},
-            timeout=120
-        )
+            llm_result = {"llm_feedback": llm_feedback_text}
 
-        llm_result = llm_response.json()
+            # Save this new, detailed message
+            with open("final_feedback.json", "w", encoding="utf-8") as f:
+                json.dump(llm_result, f, indent=4)
 
-        # Save the GPT-enhanced feedback
+            print("*** LLM feedback received and saved to final_feedback.json ***\n")
+            print("=" * 60)
+            print(" AI-GENERATED FEEDBACK SUMMARY")
+            print("=" * 60)
+            print(llm_feedback_text)
+            print("=" * 60)
+
+        else:
+            print("\nSending report to LLM Feedback Service...")
+            report_with_lines = format_report_with_line_numbers(full_report)
+            runtime = full_report.get("summary", {}).get("performance_runtime_sec", "N/A")
+            report_for_llm = f"{report_with_lines}\n\n=== PERFORMANCE SUMMARY ===\nRuntime: {runtime} seconds"
+
+            llm_response = requests.post(
+                "http://localhost:5003/generate_feedback",
+                json={"combined_report": report_for_llm},
+                timeout=120
+            )
+            llm_result = llm_response.json()
+
         with open("final_feedback.json", "w", encoding="utf-8") as f:
             json.dump(llm_result, f, indent=4)
         print("*** LLM feedback received and saved to final_feedback.json ***")
 
-        # Display summary text in console
         print("\n" + "=" * 60)
         print(" AI-GENERATED FEEDBACK SUMMARY")
         print("=" * 60)
@@ -185,7 +227,7 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"*** Normalization failed: {e} ***")
 
-    # ---------- PRINT FINAL SUMMARY ----------
+    # ---------- FINAL SUMMARY ----------
     summary = full_report.get("summary", {})
     print(f"""
 -----------------------------------------------------
@@ -200,13 +242,15 @@ if __name__ == "__main__":
   Performance Time : {summary.get("performance_runtime_sec")} sec
 -----------------------------------------------------
 """)
-
-
-
-#instructions: 
-# Set the key in your environment first: In windows PowerShell (MAC?), insert this line: setx OPENAI_API_KEY "WUs7HU5qGmJnmHsmGyXmEOTJnXfkPK7X1rqDgy6wbmWWc3uO"
-#close and reopen PowerShell so it takes effect. Type in echo $env:OPENAI_API_KEY to make sure it worked. It should print the key, WU...
-# Then leave that open and go to VSCode to the project folder
-#run flask first and keep it running in background. In the terminal insert: python src\ai_code_reviewer\analyzers\llm_feedback.py
-# In a new terminal, run the aggregator using the test code. Insert: python src\ai_code_reviewer\analyzers\aggregator.py src\ai_code_reviewer\test_code.py
-#That's it ! Hope it works, not sure how to do it on a Mac
+#instructions for running the aggregator, which calls all analyzers as well as llm_feedback.py: 
+# Set the key in your environment first: In Windows PowerShell (MAC?), insert this line:
+# setx OPENAI_API_KEY "WUs7HU5qGmJnmHsmGyXmEOTJnXfkPK7X1rqDgy6wbmWWc3uO"
+# Close and reopen PowerShell so it takes effect.
+# Type in: echo $env:OPENAI_API_KEY
+# It should print the key, starting with "WU..."
+# Then leave that open and go to VSCode to the project folder.
+# Run Flask first and keep it running in the background.
+# In the terminal insert: python src\ai_code_reviewer\analyzers\llm_feedback.py
+# In a new terminal, run the aggregator using the test code:
+#     python src\ai_code_reviewer\analyzers\aggregator.py src\ai_code_reviewer\test_code.py
+# That's it! Hope it works — not sure how to do it on a Mac.

@@ -4,22 +4,14 @@
 # Returns structured findings in the same format as syntax analyzer.
 # Can be run standalone for a quick demo. The demo is full detail output for testing and debugging. 
 
-'''### Security Analyzer Environment (Bandit)
-Bandit currently has limited support for Python 3.14+.
-To ensure consistent results, the AI Code Reviewer project uses a Python 3.12 virtual environment for the Security Analyzer:
+'''"""
+### Security Analyzer Environment (Bandit)
+Bandit is tested to work under Python 3.14 using a temporary AST-compatibility patch
+(see lines below). No virtual-environment workaround is required.
 
-```bash
-# 1. Create a Python 3.12 environment
-py -3.12 -m venv venv312
+If Bandit emits internal 'ast.Num' warnings, they are harmless, just ignore them.
+"""
 
-# 2. Activate it
-venv312\Scripts\activate
-
-# 3. Install Bandit
-pip install bandit==1.7.10
-
-# 4. Run the full analysis
-python src/ai_code_reviewer/aggregator.py src/ai_code_reviewer/test_code.py
 '''
 
 
@@ -33,7 +25,7 @@ if not hasattr(ast, "Num"):
     ast.Str = ast.Constant
     ast.Bytes = ast.Constant
     ast.NameConstant = ast.Constant
-    ast.Ellipsis = type(Ellipsis)  # ✅ Fix for Python 3.14 Bandit crash
+    ast.Ellipsis = type(Ellipsis)  # Fix for Python 3.14 Bandit crash
 
 # --------------------------------------------------------------------
 
@@ -129,14 +121,19 @@ def check_python_security(source: str, filename: str = "<string>") -> Dict[str, 
         "filename": filename
     }
 
-    # Write the code to a temporary file
+    # --- Write the code to a temporary file ---
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as tmp:
         tmp.write(source)
         tmp_filename = tmp.name
 
     try:
         # Path to Bandit executable inside your virtual environment
+        # Detect Bandit executable automatically
         bandit_exe = os.path.join("bandit_env", "Scripts", "bandit.exe")
+        if not os.path.exists(bandit_exe):
+    # Try global installation or any accessible path
+            bandit_exe = "bandit"
+
 
         # Ensure Bandit exists
         if not os.path.exists(bandit_exe):
@@ -190,7 +187,8 @@ def check_python_security(source: str, filename: str = "<string>") -> Dict[str, 
     return report
 
 
-# ---------- run directly ----------
+
+# ---------- if you want to run directly, this will show output from the demo code  ----------
 
 if __name__ == "__main__":
     def _print_findings(report: Dict[str, Any]):

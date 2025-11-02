@@ -1,9 +1,15 @@
 # test_code.py
 # This file is for testing the AI Code Reviewer aggregator. feel free to change it to see if we can catch all errors. 
 # It intentionally contains syntax, style, security, and performance issues.
+# To catch syntax errors, change line 10 and line 38
 
 import subprocess
 import hashlib
+
+#  # syntax and security issues - uncomment line 9 to get a syntax issue
+# def oops()  #this is missing a colon. remove the hash mark in the front of the line to detect the syntax violation
+import hashlib
+print(hashlib.md5(b"123").hexdigest())
 
 def greet(name):
     print(f"Hello, {name}")
@@ -29,12 +35,31 @@ def loop_example():
 
 def syntax_example():
      #Syntax issue: missing parenthesis
-    print("This is a syntax error, actually it is not a syntax error because it wouldn't run")   
+    print("This is a syntax error if you remove a quotation mark here")   #remove quotation mark to show another syntax issue
 
 if __name__ == "__main__":
     greet("Nancy")
-    print(insecure_hash("password123"))
+    print(insecure_hash("My password is 123"))
     run_ls()
     long_line_example()
     print("Loop result:", loop_example())
+
+# --- Trigger examples for analyzers ---
+
+
+
+# Style Analyzer – too long a line + bad indentation
+def bad_style(): print("This line is too long " * 20)
+
+# Security Analyzer – weak hash & dangerous call
+import hashlib, os
+password = "12345"
+print(hashlib.md5(password.encode()).hexdigest())  # Weak MD5 usage
+os.system("ls")  # Unsafe system command
+
+# Performance Analyzer – inefficient loop
+squares = []
+for i in range(0, 1000000):
+    squares.append(i * i)
+
 
