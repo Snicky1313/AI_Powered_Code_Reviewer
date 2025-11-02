@@ -1,0 +1,18 @@
+
+  _     ._   __/__   _ _  _  _ _/_   Recorded: 18:54:54  Samples:  59
+ /_//_/// /_\ / //_// / //_'/ //     Duration: 0.085     CPU time: 0.062
+/   _/                      v5.1.1
+
+Profile at C:\Users\gilab\Desktop\Stuff\School Stuff\(8) 2025 Fall\EGN 4952C-042 RI Engineering Design 2\GITHUB\AI_Code_Reviewer\src\ai_code_reviewer\analyzers\pipeline_profiler.py:160
+
+0.084 _profile_stage  ai_code_reviewer\analyzers\pipeline_profiler.py:149
+└─ 0.084 check_python_syntax  ai_code_reviewer\analyzers\syntax.py:197
+   ├─ 0.042 <module>  parso\__init__.py:1
+   │     [49 frames hidden]  parso, platform, <built-in>, re, typi...
+   │        0.018 exec_query  <built-in>
+   ├─ 0.040 _check_with_parso  ai_code_reviewer\analyzers\syntax.py:116
+   │  └─ 0.040 parse  parso\__init__.py:49
+   │        [136 frames hidden]  parso, <built-in>, <string>, re, ast
+   ├─ 0.001 print  <built-in>
+   └─ 0.001 stat  <built-in>
+

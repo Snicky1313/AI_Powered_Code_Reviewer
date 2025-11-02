@@ -1,0 +1,31 @@
+{
+  "run_id": "20251102_185454",
+  "total_elapsed_seconds": 0.086454,
+  "python_version": "3.13.9 (tags/v3.13.9:8183fa5, Oct 14 2025, 14:09:13) [MSC v.1944 64 bit (AMD64)]",
+  "stages": [
+    {
+      "stage": "check_python_syntax",
+      "elapsed_seconds": 0.085347,
+      "report_html": "C:\\Users\\gilab\\Desktop\\Stuff\\School Stuff\\(8) 2025 Fall\\EGN 4952C-042 RI Engineering Design 2\\GITHUB\\AI_Code_Reviewer\\data\\profiles\\check_python_syntax_20251102_185454.html",
+      "report_text": "C:\\Users\\gilab\\Desktop\\Stuff\\School Stuff\\(8) 2025 Fall\\EGN 4952C-042 RI Engineering Design 2\\GITHUB\\AI_Code_Reviewer\\data\\profiles\\check_python_syntax_20251102_185454.txt",
+      "result_type": "<class 'dict'>",
+      "error": ""
+    },
+    {
+      "stage": "check_python_security",
+      "elapsed_seconds": 0.001014,
+      "report_html": "C:\\Users\\gilab\\Desktop\\Stuff\\School Stuff\\(8) 2025 Fall\\EGN 4952C-042 RI Engineering Design 2\\GITHUB\\AI_Code_Reviewer\\data\\profiles\\check_python_security_20251102_185454.html",
+      "report_text": "C:\\Users\\gilab\\Desktop\\Stuff\\School Stuff\\(8) 2025 Fall\\EGN 4952C-042 RI Engineering Design 2\\GITHUB\\AI_Code_Reviewer\\data\\profiles\\check_python_security_20251102_185454.txt",
+      "result_type": "<class 'dict'>",
+      "error": ""
+    },
+    {
+      "stage": "Flask_run",
+      "elapsed_seconds": 9.3e-05,
+      "report_html": "C:\\Users\\gilab\\Desktop\\Stuff\\School Stuff\\(8) 2025 Fall\\EGN 4952C-042 RI Engineering Design 2\\GITHUB\\AI_Code_Reviewer\\data\\profiles\\Flask_run_20251102_185454.html",
+      "report_text": "C:\\Users\\gilab\\Desktop\\Stuff\\School Stuff\\(8) 2025 Fall\\EGN 4952C-042 RI Engineering Design 2\\GITHUB\\AI_Code_Reviewer\\data\\profiles\\Flask_run_20251102_185454.txt",
+      "result_type": "<class 'NoneType'>",
+      "error": "TypeError: Flask.__init__() missing 1 required positional argument: 'import_name'"
+    }
+  ]
+}

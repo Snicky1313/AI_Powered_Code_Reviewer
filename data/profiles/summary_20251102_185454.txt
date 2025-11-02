@@ -1,0 +1,8 @@
+Pipeline profiling summary (20251102_185454)
+Python: 3.13.9 (tags/v3.13.9:8183fa5, Oct 14 2025, 14:09:13) [MSC v.1944 64 bit (AMD64)]
+Total elapsed (s): 0.086454
+
+Per-stage:
+  - check_python_syntax: 0.085347s
+  - check_python_security: 0.001014s
+  - Flask_run: 9.3e-05s  [ERROR: TypeError: Flask.__init__() missing 1 required positional argument: 'import_name']
