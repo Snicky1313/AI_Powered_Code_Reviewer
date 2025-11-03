@@ -233,3 +233,4 @@ venv312/
 # Cache folders
 __pycache__/
 *.pyc
+data/profiles/
