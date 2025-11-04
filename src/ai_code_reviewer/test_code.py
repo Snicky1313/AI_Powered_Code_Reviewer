@@ -7,7 +7,7 @@ import subprocess
 import hashlib
 
 #  # syntax and security issues - uncomment line 9 to get a syntax issue
-# def oops()  #this is missing a colon. remove the hash mark in the front of the line to detect the syntax violation
+#def oops()  #this is missing a colon. remove the hash mark in the front of the line to detect the syntax violation
 import hashlib
 print(hashlib.md5(b"123").hexdigest())
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     long_line_example()
     print("Loop result:", loop_example())
 
-# --- Trigger examples for analyzers ---
+# --- Trigger more examples for analyzers ---
 
 
 
