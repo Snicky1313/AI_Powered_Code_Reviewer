@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Reviewer</title> <!--Website titling-->
+
+    <!---------css file--------->
+    <link href ="style.css" rel="stylesheet">
+
+    <!--Font family import-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+
+ <!-- Font Awesome (free to use version) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+
+
+</head>
+<body>
+
+    <!--nav center-->
+
+            <!-----------Side duo window open--------->
+
+            <!----open toggel menu function----->
+            <div class="menu-open">
+                <i class="fa-solid fa-bars" style="color: black; font-size: 22px;"></i>
+            </div>
+        
+            <!---------Side duo window close-------------->
+            
+            <!-- Close window function -->
+            <div class="menu-close">
+                <i class="fa-solid fa-x" style="color: white; font-size: 22px;"></i>
+            </div>
+
+    <div class="m-wrapper">
+        <header>
+            
+            <!-------main logo in nav------------>
+            <img src="imgs/crlogo.png"  width="180px" alt="C.Reviewer">
+
+            <nav class="nav">
+
+                <div class="chat-header">
+                    <hr />
+                    <h2>Previous Chats</h2>
+                    <button class="new-chat-btn" title="New Chat"><i class="fa-solid fa-plus"></i> New Chat</button>
+                </div>
+                
+            <ul class="chat-list">
+                <!---empty at start-->
+            </ul>
+            </nav>
+
+            
+        </header>
+
+    </div>
+
+    <!----structuring setup----->
+
+
+    <!---main chat container---->
+    <div class="main-container" id="chatbox">
+       
+        <span><br></span>
+
+        <!--Main text that sits in chat box will dissapear work in progress-->
+        <!--------TODO: Will be replaced with actual chat history. from API-->
+        <p id="main_text1">
+        <span> <br>Paste your code.</span>
+        <span><br>Get Feeback.</span>
+        <span><br>Send follow up questions.</span>
+        <span><br>All viewed here in this section.</span>
+        </p>
+
+    </div>
+
+        <!--chat input section-->           
+        <div class="chat-input">
+            <textarea name="" id="" cols="17" rows="0" placeholder="Send question here.."></textarea>
+        </div>
+
+        
+
+
+    <script src="script.js"></script> <!-----Javascript file bottom of body-->
+
+</body>
+
+
+</html>
+
+<!-----TODO FUTURE INCREMENTS:
+-UI has been implemented so find any bugs by entire team.
+-->
