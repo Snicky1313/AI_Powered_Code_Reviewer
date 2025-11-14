@@ -107,13 +107,14 @@ def _suggest_fix(rule_id: str, message: str, snippet: str) -> str:
 def check_python_security(source: str, filename: str = "<string>") -> Dict[str, Any]:
     """
     Analyze Python code for security issues using Bandit.
-    Runs Bandit via subprocess inside the local 'bandit_env' virtual environment
-    and returns structured findings compatible with the aggregator.
+    Always forces Bandit to run under Python 3.12 to avoid Python 3.14 AST issues.
     """
+
     import os
     import json
     import subprocess
     import tempfile
+    import shutil
 
     report: Dict[str, Any] = {
         "ok": True,
@@ -121,41 +122,46 @@ def check_python_security(source: str, filename: str = "<string>") -> Dict[str, 
         "filename": filename
     }
 
-    # --- Write the code to a temporary file ---
+    # --- Write the code to a temp file ---
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as tmp:
         tmp.write(source)
         tmp_filename = tmp.name
 
     try:
-        # Path to Bandit executable inside your virtual environment
-        # Detect Bandit executable automatically
-        bandit_exe = os.path.join("bandit_env", "Scripts", "bandit.exe")
-        if not os.path.exists(bandit_exe):
-    # Try global installation or any accessible path
-            bandit_exe = "bandit"
+        # --- Find Python 3.12 if installed ---
+        python312 = shutil.which("py.exe")
+        py312_prefix = []
 
+        if python312:
+            # If the Windows py launcher exists, use "-3.12" to force 3.12
+            py312_prefix = ["py", "-3.12"]
+        else:
+            # Fallback: direct python3.12 executable
+            pyexe = shutil.which("python3.12") or shutil.which("python3")
+            if pyexe:
+                py312_prefix = [pyexe]
 
-        # Ensure Bandit exists
-        if not os.path.exists(bandit_exe):
-            raise FileNotFoundError(
-                "Bandit executable not found. Make sure you ran: "
-                "'py -3.12 -m venv bandit_env' and 'pip install bandit==1.7.10'"
-            )
+        # --- Build bandit command ---
+        bandit_cmd = py312_prefix + ["-m", "bandit", "-f", "json", "-q", tmp_filename]
 
-        # Run Bandit on the temporary file
+        # --- Run Bandit ---
         result = subprocess.run(
-            [bandit_exe, "-f", "json", "-q", tmp_filename],
+            bandit_cmd,
             capture_output=True,
             text=True,
             check=False
         )
 
+        # If Bandit produced no output → return clean report
         if not result.stdout.strip():
-            return report  # no findings
+            return report
 
+        # Parse JSON results
         data = json.loads(result.stdout)
+
         for issue in data.get("results", []):
             report["ok"] = False
+
             line = issue.get("line_number", 1)
             message = issue.get("issue_text", "")
             severity = issue.get("issue_severity", "LOW")
@@ -170,18 +176,20 @@ def check_python_security(source: str, filename: str = "<string>") -> Dict[str, 
             })
 
     except Exception as e:
+        # If Bandit or Python fails
         report["ok"] = False
         report["findings"].append({
             "message": f"Security analyzer failed: {e}",
             "severity": "HIGH",
             "location": {"start": {"line": 1, "col": 1}},
-            "suggestion": "Check Bandit installation or path and rerun."
+            "suggestion": "Ensure Bandit is installed and Python 3.12 is available."
         })
 
     finally:
+        # Clean up temporary file
         try:
             os.unlink(tmp_filename)
-        except OSError:
+        except:
             pass
 
     return report
