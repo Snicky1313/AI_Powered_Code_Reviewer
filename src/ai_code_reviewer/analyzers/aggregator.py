@@ -243,7 +243,7 @@ if __name__ == "__main__":
 -----------------------------------------------------
 """)
 #instructions for running the aggregator, which calls all analyzers as well as llm_feedback.py: 
-# Set the key in your environment first: In Windows PowerShell (MAC?), insert this line:
+# Set the key in your environment first: In Windows PowerShell (idk MAC?), insert this line:
 # setx OPENAI_API_KEY "WUs7HU5qGmJnmHsmGyXmEOTJnXfkPK7X1rqDgy6wbmWWc3uO"
 # Close and reopen PowerShell so it takes effect.
 # Type in: echo $env:OPENAI_API_KEY
@@ -254,6 +254,6 @@ if __name__ == "__main__":
 # In a new terminal, run the aggregator using the test code:
 #     python src\ai_code_reviewer\analyzers\aggregator.py src\ai_code_reviewer\test_code.py
 # In a new terminal, you have to make sure UVICORN in running as well as llm_feedback.py:
-# Insert into terminal: py -3.12 -m uvicorn src.ai_code_reviewer.backend:app --reload --port 8000
+# Insert into terminal: py -3.12 -m uvicorn ai_code_reviewer.backend:app --reload --port 8000
 # So you will have 3 terminals open to run this, plus the powershell in your windows environment
 #One other thing, To start up the UI - click twice on the file in AI_Code_Reviewer-main >>A_R >> main  in your computer's files to open UI 
