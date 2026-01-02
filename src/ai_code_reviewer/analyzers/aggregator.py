@@ -253,8 +253,7 @@ if __name__ == "__main__":
 # In the terminal insert: python src\ai_code_reviewer\analyzers\llm_feedback.py
 # In a new terminal, run the aggregator using the test code:
 #     python src\ai_code_reviewer\analyzers\aggregator.py src\ai_code_reviewer\test_code.py
-# That's it! Hope it works — not sure how to do it on a Mac.
 # In a new terminal, you have to make sure UVICORN in running as well as llm_feedback.py:
 # Insert into terminal: py -3.12 -m uvicorn src.ai_code_reviewer.backend:app --reload --port 8000
-
+# So you will have 3 terminals open to run this, plus the powershell in your windows environment
 #One other thing, To start up the UI - click twice on the file in AI_Code_Reviewer-main >>A_R >> main  in your computer's files to open UI 

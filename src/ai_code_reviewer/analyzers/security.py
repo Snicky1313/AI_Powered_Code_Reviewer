@@ -122,8 +122,9 @@ def check_python_security(source: str, filename: str = "<string>") -> Dict[str, 
         "filename": filename
     }
 
+
     # --- Write the code to a temp file ---
-    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False, encoding="utf-8") as tmp:
         tmp.write(source)
         tmp_filename = tmp.name
 

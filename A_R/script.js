@@ -1,7 +1,5 @@
 //JAVASCRIPT FILE//
-
-
-// NAV FUNCTIONALITY
+// SIDE NAV FUNCTIONALITY
 const menuOpenBtn = document.querySelector('.menu-open');
 const menuCloseBtn = document.querySelector('.menu-close');
 const nav = document.querySelector('.nav');
@@ -18,6 +16,8 @@ menuCloseBtn.addEventListener('click', () => {
     menuOpenBtn.style.display = 'flex';
 });
 
+//-----------------------
+
 
 //duo window side bar functionality
 
@@ -27,6 +27,15 @@ const mainText = document.getElementById('main_text1'); //update main chat box t
 //const textarea = document.querySelector('.chat-input textarea'); //message input clear
 const cInput = document.querySelector('.chat-input textarea');
 
+function addSpacing(text) {
+    return text
+        .replace(/(\*\*Syntax Analysis\*\*)/g, "\n\n$1")
+        .replace(/(\*\*Security Analysis\*\*)/g, "\n\n$1")
+        .replace(/(\*\*Style Analysis\*\*)/g, "\n\n$1")
+        .replace(/(\*\*Performance Analysis\*\*)/g, "\n\n$1")
+        .replace(/(\*\*AI Code Review Summary\*\*)/g, "\n\n$1");
+}
+
 
 function selectChat(chatItem){
     //clear the styles in active
@@ -34,11 +43,10 @@ function selectChat(chatItem){
         item.classList.remove('active-chat');
     }
 
-    //set chat to active
+    //set chat to active (switcing through chats)
     chatItem.classList.add('active-chat');
 
     //update the default text inside of main chat area
-
     mainText.innerHTML = `<span><br>${chatItem.textContent}</span>`;
     cInput.value = "";
 }
@@ -58,8 +66,6 @@ newChatBtn.addEventListener('click', () => {
 
 //Allow textbox to expand and scroll
 
-//const cInput = document.querySelector('.chat-input textarea');
-
 cInput.addEventListener('input', () =>{
     cInput.style.height = 'auto';
     cInput.style.height = cInput.scrollHeight + 'px';
@@ -67,28 +73,27 @@ cInput.addEventListener('input', () =>{
 });
 
 
-//---------------API integration------------
+//-----------API integration----------------
 
 //-API send and recieve messages
 
-
-
-
 const sendChatBtn = document.createElement("button");
-sendChatBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i>';
+sendChatBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
 sendChatBtn.classList.add("send-btn");
 document.querySelector(".chat-input").appendChild(sendChatBtn);
 
 const mainContainer = document.querySelector(".main-container");
 
-//sendChatBtn.addEventListener("click", handleChat);
+
 
 
 //chat message bublle
 const createChat = (text, type) => {
     const msgEl = document.createElement("li");
     msgEl.classList.add("chat", type);
-    msgEl.innerHTML = `<p>${text}</p>`;
+    const pre = document.createElement("pre");
+    pre.textContent = text;    
+    msgEl.appendChild(pre);
     return msgEl;
 };
 
@@ -96,25 +101,44 @@ const createChat = (text, type) => {
 //calling backend
 
 const generateResponse = (userMessage, incomingMsgEl) => {
-    const messageElement = incomingMsgEl.querySelector("p");
+    const messageElement = incomingMsgEl.querySelector("pre");
 
-    fetch("http://127.0.0.1:5003/generate_feedback", {
+    fetch("http://localhost:8000/run-review", { //connects properly to backend (run-review)
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ combined_report: { code: userMessage } })
+        body: JSON.stringify({ source_code: userMessage })
     })
     .then(res => {
-        if (!res.ok) throw new Error("Server error");
+        if (!res.ok) {
+            throw new Error(`Server responded with ${res.status}`);
+        }
         return res.json();
     })
     .then(data => {
-        messageElement.textContent = data.llm_feedback ?? data.feedback ?? "No feedback received.";
-    })
+        const llmFeedback = data.llm_feedback || "No feedback returned.";
+
+        //for display purposes
+        messageElement.innerHTML = `
+            <div style="font-size: 0.95rem; line-height: 1.5; white-space:  pre-wrap">
+                <strong style="font-size: 1rem;">AI Code Review Summary</strong>
+                <br><br>
+
+                ${addSpacing(llmFeedback)}
+
+
+                <br><br>
+                <em style="color: #888; font-size: 0.8rem;">
+                    (Full technical results hidden for readability)
+                </em>
+            </div>
+        `;
+    }) //error catching default
     .catch(error => {
-        //error message line if server not connected
         messageElement.classList.add("error");
-        messageElement.textContent = "Hello :)! Send your python code anytime and I will scan it for feedback!";
-        //messageElement.textContent = "Oops! Something went wrong: " + error.message;
+        messageElement.innerHTML = `
+            <strong>Error:</strong> Could not reach backend.<br>
+            Make sure the <code>backend</code> and <code>LLM Feedback Service</code> are running.
+        `;
     })
     .finally(() => {
         mainContainer.scrollTo(0, mainContainer.scrollHeight);
@@ -123,16 +147,13 @@ const generateResponse = (userMessage, incomingMsgEl) => {
 
 
 
-
 //chat send
 const handleChat = () => {
-    const userMessage = cInput.value.trim();
+    const userMessage = cInput.value;
     if (!userMessage) return;
 
 
-    //const mainContainer = document.querySelector(".main-container");
-
-    //create / display user message
+    //create + display user message
     const userMsgEl = createChat(userMessage, "chat-outgoing");
 
     mainContainer.appendChild(userMsgEl);
@@ -147,7 +168,6 @@ const handleChat = () => {
     generateResponse(userMessage, botMsgEl);
 
     //clear input
-
     cInput.value = "";
 
 };
@@ -162,6 +182,3 @@ cInput.addEventListener("keydown", (e) => {
         handleChat();
     }
 });
-
-
-//-chat history (keep record of the chat

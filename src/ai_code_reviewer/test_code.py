@@ -6,7 +6,7 @@
 import subprocess
 import hashlib
 
-#  # syntax and security issues - uncomment line 9 to get a syntax issue
+# syntax issues - uncomment the next line to get another syntax issue
 #def oops()  #this is missing a colon. remove the hash mark in the front of the line to detect the syntax violation
 import hashlib
 print(hashlib.md5(b"123").hexdigest())
@@ -34,19 +34,17 @@ def loop_example():
     return total
 
 def syntax_example():
-     #Syntax issue: missing parenthesis
+     #Syntax issue: missing quotation mark
     print("This is a syntax error if you remove a quotation mark here")   #remove quotation mark to show another syntax issue
 
 if __name__ == "__main__":
-    greet("Nancy")
+    greet("Hello")
     print(insecure_hash("My password is 123"))
     run_ls()
     long_line_example()
     print("Loop result:", loop_example())
 
 # --- Trigger more examples for analyzers ---
-
-
 
 # Style Analyzer – too long a line + bad indentation
 def bad_style(): print("This line is too long " * 20)
@@ -61,5 +59,3 @@ os.system("ls")  # Unsafe system command
 squares = []
 for i in range(0, 1000000):
     squares.append(i * i)
-
-
